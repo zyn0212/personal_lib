@@ -9,6 +9,7 @@
 extern int zyn_test(void);
 extern int zyn_gcd(int a, int b);
 extern int zyn_lcm(int a, int b);
+extern int zyn_isPrime(int n);
 
 #ifdef __cplusplus
  }

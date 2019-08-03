@@ -37,3 +37,13 @@ extern int zyn_lcm(int a, int b)
 
 	return a * (b / t);
 }
+extern int zyn_isPrime(int n)
+{
+	if( n < 3 || 0 == (n & 1) )
+		return 0;
+	int i = 0;
+	for( i = 3; i <= n >> 1; i += 2 )
+		if( 0 == n % i )
+			return 0;
+	return 1;
+}
