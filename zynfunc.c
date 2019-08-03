@@ -7,6 +7,7 @@
 ******************************************/
 #include "./zynfunc.h"
 #include <stdio.h>
+#include <math.h>
 extern int zyn_test(void)
 {
 	printf("test OK: %d!\n", zyn_gcd(134, 26));
@@ -39,11 +40,15 @@ extern int zyn_lcm(int a, int b)
 }
 extern int zyn_isPrime(int n)
 {
-	if( n < 3 || 0 == (n & 1) )
+	if( n < 2 )
 		return 0;
-	int i = 0;
-	for( i = 3; i <= n >> 1; i += 2 )
-		if( 0 == n % i )
+	if( 2 == n || 3 == n )
+		return 1;
+	if( 1 != n % 6 && 5 != n % 6 )
+		return 0;
+	int i = 5;
+	for( ; i < sqrt(n); i += 6 )
+		if( 0 == n % i || 0 == n % (i + 2) )
 			return 0;
 	return 1;
 }
