@@ -27,3 +27,13 @@ extern int zyn_gcd(int a, int b)
 	}
 	return b;
 }
+extern int zyn_lcm(int a, int b)
+{
+	if( 0 == a || 0 == b )
+		return 0;
+	int t = zyn_gcd(a, b);
+	if( 1 == zyn_isOverFlow_mul(a, b / t) )
+		return 0;
+
+	return a * (b / t);
+}
