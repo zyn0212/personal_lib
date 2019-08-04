@@ -52,3 +52,17 @@ extern int zyn_isPrime(int n)
 			return 0;
 	return 1;
 }
+extern long zyn_pow(int base, int x)
+{
+	if ( 0 == base )
+		return 0;
+	if( 0 == x )
+		return 1;
+	long ret = 1, tmp_base = (long)base;
+	for( ; x > 0; tmp_base *= tmp_base, x >>= 1 )
+		if( 1 == zyn_isOverFlow_mul(ret, tmp_base) || 1 == zyn_isOverFlow_mul(tmp_base, tmp_base) ) {
+			return 0; }
+		else if( 1 == (x & 1) )
+			ret *= tmp_base;
+	return ret;
+}
