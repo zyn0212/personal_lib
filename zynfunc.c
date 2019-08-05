@@ -10,6 +10,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+static int check_xornode(HEADER *header, NODE_SMP *node);
 extern int zyn_test(void)
 {
 	printf("test OK: %d!\n", zyn_gcd(134, 26));
@@ -127,4 +128,118 @@ int zyn_bubbleSort(void *unsort, int n, int size, int (*compare)(void const *, v
 	free(temp);
 	free(sorted);
 	return moved;
+}
+extern HEADER * zyn_initxorll(NODE_SMP * head, NODE_SMP * tail)
+{
+	if( NULL == head || NULL == tail )
+		return NULL;
+	HEADER header_tmp = {2, head, tail};
+	HEADER *header_ret = (HEADER *)calloc(1, sizeof(HEADER));
+	if( NULL == header_ret ) {
+		return NULL;
+	}
+	return (HEADER *)memcpy(header_ret, &header_tmp, sizeof(HEADER));
+}
+extern int zyn_destoryxorll(HEADER * header)
+{
+	int num = 0;
+	if( NULL == header )
+		return num;
+	NODE_SMP * prev = header->head, * curr = XOR_2PTR(prev->side, header->tail);
+	NODE_SMP * next = XOR_2PTR(curr->side, prev);
+	while( header->tail != curr ) {
+		prev = curr;
+		curr = next;
+		next = XOR_2PTR(curr->side, prev);
+		free(prev);
+		++num;
+	}
+	free(header->head);
+	free(header->tail);
+	num += 2;
+	free(header);
+	return -num;
+}
+extern NODE_SMP * zyn_insertxornode(HEADER * header, NODE_SMP * prev, NODE_SMP * next, NODE_SMP * insnode)
+{
+	if( NULL == header || NULL == prev || NULL == next || NULL == insnode )
+		return NULL;
+	int prevloc = check_xornode(header, prev);
+	int nextloc = check_xornode(header, next);
+	if( -1 != prevloc && -1 != nextloc && (1 == prevloc - nextloc || 1 == nextloc - prevloc) ) {
+		prev->side = XOR_3PTR(prev->side, insnode, next);
+		insnode->side = XOR_2PTR(prev, next);
+		next->side = XOR_3PTR(next->side, prev, insnode);
+		++header->nodenum;
+		return insnode;
+	}
+	return NULL;
+}
+extern NODE_SMP * zyn_deletexornode(HEADER * header, NODE_SMP * prev, NODE_SMP * next, NODE_SMP * delnode)
+{
+	if( NULL == header || NULL == prev || NULL == next || NULL == delnode )
+		return NULL;
+	if( header->head == delnode || header->tail == delnode )
+		return NULL;
+	int prevloc = check_xornode(header, prev);
+	int nextloc = check_xornode(header, next);
+	int delloc = check_xornode(header, delnode);
+	if( -1 != prevloc && -1 != nextloc && -1 != delloc && delloc << 1 == prevloc + nextloc ) {
+		prev->side = XOR_3PTR(prev->side, delnode, next);
+		delnode->side = XOR_2PTR(prev, next);
+		next->side = XOR_3PTR(next->side, prev, delnode);
+		--header->nodenum;
+		return delnode;
+	}
+	return NULL;
+}
+extern int zyn_printxorll(HEADER *header, void (*prtnode)(NODE_SMP *node, int nodeloc), PRTLL_METHOD prtmethod)
+{
+	if( NULL == header )
+		return -1;
+	NODE_SMP * prev = NULL, * next = NULL, * current = NULL, * end = NULL;
+	if( PRTLL_H2T == prtmethod ) {
+		prev = header->tail;
+		current = header->head;
+		end = header->tail;
+	}
+	else if( PRTLL_T2H == prtmethod ) {
+		prev = header->head;
+		current = header->tail;
+		end = header->head;
+	}
+	int loc = 0;
+	do {
+		if( NULL == prtnode )
+			printf("%d\t%d\n", loc, current->val);
+		else
+			prtnode(current, loc);
+		next = XOR_2PTR(current->side, prev);
+		prev = current;
+		current = next;
+		next = NULL;
+		++loc;
+	} while( end != current );
+	if( NULL == prtnode )
+		printf("%d\t%d\n", loc, current->val);
+	else
+		prtnode(current, loc);
+	return loc + 1;
+}
+static int check_xornode(HEADER *header, NODE_SMP *node)
+{
+	if( header->head == node )
+		return 0;
+	NODE_SMP * prev = header->tail, * current = header->head, * next = NULL;
+	int loc = 0;
+	do {
+		++loc;
+		next = XOR_2PTR(current->side, prev);
+		prev = current;
+		current = next;
+		next = NULL;
+		if( current == node )
+			return loc;
+	} while( header->tail != current );
+	return -1;
 }
