@@ -243,3 +243,97 @@ static int check_xornode(HEADER *header, NODE_SMP *node)
 	} while( header->tail != current );
 	return -1;
 }
+extern char * zyn_huge_plus(char const * a, char const * b, char * result, int maxlen)
+{
+	if( NULL == a || NULL == b || NULL == result || maxlen < 1 )
+		return NULL;
+	int a_sgn = 0, b_sgn = 0, gotmax = 0, a_isend = 0, b_isend = 0;
+	char inputstatus = 0;/* bit5: a is end, bit4: b is end, bit3: a sgn, bit2: b sgn, bit1 - 0: max */
+	char * const a_stk_top = (char *)calloc(maxlen, sizeof(char));
+	char * const b_stk_top = (char *)calloc(maxlen, sizeof(char));
+	char * const r_stk_top = (char *)calloc(maxlen, sizeof(char));
+	if( NULL == a_stk_top || NULL == b_stk_top || NULL == r_stk_top ) {
+		free(a_stk_top);
+		free(b_stk_top);
+		free(r_stk_top);
+		return NULL;
+	}
+	char * const a_stk_bottom = a_stk_top + maxlen - 1;
+	char * const b_stk_bottom = b_stk_top + maxlen - 1;
+	char * const r_stk_bottom = r_stk_top + maxlen - 1;
+	char * a_stk = a_stk_bottom;
+	char * b_stk = b_stk_bottom;
+	char * r_stk = r_stk_bottom;
+	char a_tmp = 0, b_tmp = 0, upval = 0;
+	while( (' ' == *a || '\t' == *a) && '\0' != *a )
+		++a;
+	if( '-' == *a )
+		++a, inputstatus |= 1 << 3;
+	while( '0' == *a && '\0' != *a )
+		++a;
+	while( (' ' == *b || '\t' == *b) && '\0' != *b )
+		++b;
+	if( '-' == *b )
+		++b, inputstatus |= 1 << 2;
+	while( '0' == *b && '\0' != *b )
+		++b;
+	while( '\0' != *a || '\0' != *b ) {
+		if( '\0' != (a_tmp = *a) && a_stk >= a_stk_top && !(inputstatus & 1 << 5) ) {
+			if( a_tmp >= '0' && a_tmp <= '9' )
+				*a_stk-- = a_tmp;
+			else
+				inputstatus |= 1 << 5;
+			++a;
+		}
+		if( '\0' != (b_tmp = *b) && b_stk >= b_stk_top && !(inputstatus & 1 << 4) ) {
+			if( b_tmp >= '0' && b_tmp <= '9' )
+				*b_stk-- = b_tmp;
+			else
+				inputstatus |= 1 << 4;
+			++b;
+		}
+		if( 0 == (inputstatus & 3) ) {
+			if( a_tmp > b_tmp )
+				gotmax |= 1;
+			else if( b_tmp > a_tmp )
+				gotmax |= 2;
+		}
+	}
+	if( a_stk_bottom != a_stk )
+		++a_stk;
+	if( b_stk_bottom != b_stk )
+		++b_stk;
+	if( a_stk_bottom - a_stk != b_stk_bottom - b_stk ) {
+		inputstatus &= ~3;
+		inputstatus |= a_stk_bottom - a_stk > b_stk_bottom - b_stk ? 1 : 2;
+	}
+	a_tmp = b_tmp = 0;
+	switch( inputstatus & 3 <<  2 ) {
+		case 0: case 3 << 2:
+			while( a_stk <= a_stk_bottom || b_stk <= b_stk_bottom ) {
+				if( a_stk <= a_stk_bottom )
+					a_tmp = *a_stk++ - '0';
+				else
+					a_tmp = 0;
+				if( b_stk <= b_stk_bottom )
+					b_tmp = *b_stk++ - '0';
+				else
+					b_tmp = 0;
+				if( a_tmp + b_tmp + upval > 9 )
+					*r_stk-- = a_tmp + b_tmp + upval - 10 + '0', upval = 1;
+				else
+					*r_stk-- = a_tmp + b_tmp + upval +'0', upval = 0;
+			}
+			if( 0 !=  upval )
+				*r_stk-- = '1';
+			++r_stk;
+			break;
+		default:
+			break;
+	}
+	printf("%s\n", r_stk);
+	free(a_stk_top);
+	free(b_stk_top);
+	free(r_stk_top);
+	return NULL;
+}

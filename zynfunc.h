@@ -26,6 +26,7 @@ typedef struct {
 #endif
 #define zyn_isOverFlow_mul(x, y) ((x)*(y)/(x) != (y))
 #define zyn_isOverFlow_add(x, y) ((((x)^(y))|(((~((x)^(y))&1<<sizeof(long)*CHAR_BIT-1)^(x))+(y))^(y))>=0) 
+#define HUGE_NUMBER_LENGTH 10000
 extern int zyn_test(void);
 extern int zyn_gcd(int a, int b);
 extern int zyn_lcm(int a, int b);
@@ -38,6 +39,8 @@ extern int zyn_destoryxorll(HEADER * header);
 extern int zyn_printxorll(HEADER *header, void (*prtnode)(NODE_SMP *node, int nodeloc), PRTLL_METHOD prtmethod);
 extern NODE_SMP * zyn_insertxornode(HEADER * header, NODE_SMP * prev, NODE_SMP * next, NODE_SMP * insnode);
 extern NODE_SMP * zyn_deletexornode(HEADER * header, NODE_SMP * prev, NODE_SMP * next, NODE_SMP * delnode);
+extern char * zyn_huge_plus(char const * a, char const * b, char * result, int maxlen);
+extern char * zyn_huge_time(char * const a, char * const b, char * result, int maxlen);
 
 #ifdef __cplusplus
  }
