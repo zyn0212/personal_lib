@@ -248,7 +248,7 @@ extern char * zyn_huge_plus(char const * a, char const * b, char * result, int m
 	if( NULL == a || NULL == b || NULL == result || maxlen < 1 )
 		return NULL;
 	int a_sgn = 0, b_sgn = 0, gotmax = 0, a_isend = 0, b_isend = 0;
-	char inputstatus = 0;/* bit5: a is end, bit4: b is end, bit3: a sgn, bit2: b sgn, bit1 - 0: max */
+	char inputstatus = 0;/* bit5: a is end, bit4: b is end, bit3: a sgn, bit2: b sgn, bit1 - 0: 10 a max 01 b max */
 	char * const a_stk_top = (char *)calloc(maxlen, sizeof(char));
 	char * const b_stk_top = (char *)calloc(maxlen, sizeof(char));
 	char * const r_stk_top = (char *)calloc(maxlen, sizeof(char));
@@ -277,26 +277,26 @@ extern char * zyn_huge_plus(char const * a, char const * b, char * result, int m
 		++b, inputstatus |= 1 << 2;
 	while( '0' == *b && '\0' != *b )
 		++b;
-	while( '\0' != *a || '\0' != *b ) {
-		if( '\0' != (a_tmp = *a) && a_stk >= a_stk_top && !(inputstatus & 1 << 5) ) {
-			if( a_tmp >= '0' && a_tmp <= '9' )
+	while( ('\0' != *a || '\0' != *b) && 3 << 4 != (inputstatus & 3 << 4) ) {
+		if( '\0' != (a_tmp = *a) ) {
+			++a;
+			if( a_stk >= a_stk_top && 0 == (inputstatus & 1 << 5) && a_tmp >= '0' && a_tmp <= '9' )
 				*a_stk-- = a_tmp;
 			else
 				inputstatus |= 1 << 5;
-			++a;
 		}
-		if( '\0' != (b_tmp = *b) && b_stk >= b_stk_top && !(inputstatus & 1 << 4) ) {
-			if( b_tmp >= '0' && b_tmp <= '9' )
+		if( '\0' != (b_tmp = *b) ) {
+			++b;
+			if( b_stk >= b_stk_top && 0 == (inputstatus & 1 << 4) && b_tmp >= '0' && b_tmp <= '9' )
 				*b_stk-- = b_tmp;
 			else
 				inputstatus |= 1 << 4;
-			++b;
 		}
 		if( 0 == (inputstatus & 3) ) {
 			if( a_tmp > b_tmp )
-				gotmax |= 1;
-			else if( b_tmp > a_tmp )
 				gotmax |= 2;
+			else if( b_tmp > a_tmp )
+				gotmax |= 1;
 		}
 	}
 	if( a_stk_bottom != a_stk )
@@ -305,7 +305,7 @@ extern char * zyn_huge_plus(char const * a, char const * b, char * result, int m
 		++b_stk;
 	if( a_stk_bottom - a_stk != b_stk_bottom - b_stk ) {
 		inputstatus &= ~3;
-		inputstatus |= a_stk_bottom - a_stk > b_stk_bottom - b_stk ? 1 : 2;
+		inputstatus |= a_stk_bottom - a_stk > b_stk_bottom - b_stk ? 2 : 1;
 	}
 	a_tmp = b_tmp = 0;
 	switch( inputstatus & 3 <<  2 ) {
@@ -326,14 +326,16 @@ extern char * zyn_huge_plus(char const * a, char const * b, char * result, int m
 			}
 			if( 0 !=  upval )
 				*r_stk-- = '1';
+			if( 3 << 2 == (inputstatus & 3 << 2) )
+				*r_stk-- = '-';
 			++r_stk;
 			break;
 		default:
 			break;
 	}
-	printf("%s\n", r_stk);
+	sprintf(result, "%s", r_stk);
 	free(a_stk_top);
 	free(b_stk_top);
 	free(r_stk_top);
-	return NULL;
+	return result;
 }
