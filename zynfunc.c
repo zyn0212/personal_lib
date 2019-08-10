@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 static int check_xornode(HEADER *header, NODE_SMP *node);
+static char * huge_pm(char const * a, char const * b, char * result, int maxlen, char inputstatus); /* bit5: a is end, bit4: b is end, bit3: a sgn, bit2: b sgn, bit1 - 0: 10 a max 01 b max */
 extern int zyn_test(void)
 {
 	printf("test OK: %d!\n", zyn_gcd(134, 26));
@@ -243,12 +244,18 @@ static int check_xornode(HEADER *header, NODE_SMP *node)
 	} while( header->tail != current );
 	return -1;
 }
+extern char * zyn_huge_minus(char const * a, char const * b, char * result, int maxlen)
+{
+		return huge_pm(a, b, result, maxlen, 1 << 2);
+}
 extern char * zyn_huge_plus(char const * a, char const * b, char * result, int maxlen)
+{
+		return huge_pm(a, b, result, maxlen, 0);
+}
+static char * huge_pm(char const * a, char const * b, char * result, int maxlen, char inputstatus) /* bit5: a is end, bit4: b is end, bit3: a sgn, bit2: b sgn, bit1 - 0: 10 a max 01 b max */
 {
 	if( NULL == a || NULL == b || NULL == result || maxlen < 1 )
 		return NULL;
-	int a_sgn = 0, b_sgn = 0, gotmax = 0, a_isend = 0, b_isend = 0;
-	char inputstatus = 0;/* bit5: a is end, bit4: b is end, bit3: a sgn, bit2: b sgn, bit1 - 0: 10 a max 01 b max */
 	char * const a_stk_top = (char *)calloc(maxlen, sizeof(char));
 	char * const b_stk_top = (char *)calloc(maxlen, sizeof(char));
 	char * const r_stk_top = (char *)calloc(maxlen, sizeof(char));
@@ -268,13 +275,13 @@ extern char * zyn_huge_plus(char const * a, char const * b, char * result, int m
 	while( (' ' == *a || '\t' == *a) && '\0' != *a )
 		++a;
 	if( '-' == *a )
-		++a, inputstatus |= 1 << 3;
+		++a, inputstatus ^= 1 << 3;
 	while( '0' == *a && '\0' != *a )
 		++a;
 	while( (' ' == *b || '\t' == *b) && '\0' != *b )
 		++b;
 	if( '-' == *b )
-		++b, inputstatus |= 1 << 2;
+		++b, inputstatus ^= 1 << 2;
 	while( '0' == *b && '\0' != *b )
 		++b;
 	while( ('\0' != *a || '\0' != *b) && 3 << 4 != (inputstatus & 3 << 4) ) {
@@ -294,9 +301,9 @@ extern char * zyn_huge_plus(char const * a, char const * b, char * result, int m
 		}
 		if( 0 == (inputstatus & 3) ) {
 			if( a_tmp > b_tmp )
-				gotmax |= 2;
+				inputstatus |= 2;
 			else if( b_tmp > a_tmp )
-				gotmax |= 1;
+				inputstatus |= 1;
 		}
 	}
 	if( a_stk_bottom != a_stk )
@@ -308,31 +315,42 @@ extern char * zyn_huge_plus(char const * a, char const * b, char * result, int m
 		inputstatus |= a_stk_bottom - a_stk > b_stk_bottom - b_stk ? 2 : 1;
 	}
 	a_tmp = b_tmp = 0;
-	switch( inputstatus & 3 <<  2 ) {
-		case 0: case 3 << 2:
-			while( a_stk <= a_stk_bottom || b_stk <= b_stk_bottom ) {
-				if( a_stk <= a_stk_bottom )
-					a_tmp = *a_stk++ - '0';
-				else
-					a_tmp = 0;
-				if( b_stk <= b_stk_bottom )
-					b_tmp = *b_stk++ - '0';
-				else
-					b_tmp = 0;
+	while( a_stk <= a_stk_bottom || b_stk <= b_stk_bottom ) {
+		a_tmp = a_stk <= a_stk_bottom ? *a_stk++ - '0' : 0;
+		b_tmp = b_stk <= b_stk_bottom ? *b_stk++ - '0' : 0;
+		switch( inputstatus & 0xF ) {
+			case 0xC: case 0xE: case 0xD:
+			case 0x0: case 0x2: case 0x1:
 				if( a_tmp + b_tmp + upval > 9 )
 					*r_stk-- = a_tmp + b_tmp + upval - 10 + '0', upval = 1;
 				else
-					*r_stk-- = a_tmp + b_tmp + upval +'0', upval = 0;
-			}
-			if( 0 !=  upval )
-				*r_stk-- = '1';
-			if( 3 << 2 == (inputstatus & 3 << 2) )
-				*r_stk-- = '-';
-			++r_stk;
-			break;
-		default:
-			break;
+					*r_stk-- = a_tmp + b_tmp + upval + '0', upval = 0;
+				break;
+			case 0xA: case 0x6:
+				if( a_tmp - upval - b_tmp >= 0 )
+					*r_stk-- = a_tmp - upval - b_tmp + '0', upval = 0;
+				else
+					*r_stk-- = a_tmp - upval - b_tmp + '0' + 10, upval = 1;
+				break;
+			case 0x9: case 0x5:
+				if( b_tmp - upval - a_tmp >= 0 )
+					*r_stk-- = b_tmp - upval - a_tmp + '0', upval = 0;
+				else
+					*r_stk-- = b_tmp - upval - a_tmp + '0' + 10, upval = 1;
+				break;
+			case 0x8: case 0x4:
+				*r_stk-- = '0';
+				a_stk = a_stk_bottom + 1;
+				b_stk = b_stk_bottom + 1;
+			default:
+				break;
+		}
 	}
+	if( 0 != upval )
+		*r_stk-- = '1';
+	if( (inputstatus & 0xC) == 0xC || (inputstatus & 0xF) == 0xA || (inputstatus & 0xF) == 0x5 )
+		*r_stk-- = '-';
+	++r_stk;
 	sprintf(result, "%s", r_stk);
 	free(a_stk_top);
 	free(b_stk_top);

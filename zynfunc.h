@@ -40,6 +40,7 @@ extern int zyn_printxorll(HEADER *header, void (*prtnode)(NODE_SMP *node, int no
 extern NODE_SMP * zyn_insertxornode(HEADER * header, NODE_SMP * prev, NODE_SMP * next, NODE_SMP * insnode);
 extern NODE_SMP * zyn_deletexornode(HEADER * header, NODE_SMP * prev, NODE_SMP * next, NODE_SMP * delnode);
 extern char * zyn_huge_plus(char const * a, char const * b, char * result, int maxlen);
+extern char * zyn_huge_minus(char const * a, char const * b, char * result, int maxlen);
 extern char * zyn_huge_time(char * const a, char * const b, char * result, int maxlen);
 
 #ifdef __cplusplus
