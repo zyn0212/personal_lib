@@ -33,7 +33,6 @@ extern int zyn_lcm(int a, int b);
 extern int zyn_isPrime(int n);
 extern long zyn_pow(int base, int x);
 extern int zyn_insertSort(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), SORT_METHOD sortby);
-extern int zyn_bubbleSort(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), SORT_METHOD sortby);
 extern HEADER * zyn_initxorll(NODE_SMP * head, NODE_SMP * tail);
 extern int zyn_destoryxorll(HEADER * header);
 extern int zyn_printxorll(HEADER *header, void (*prtnode)(NODE_SMP *node, int nodeloc), PRTLL_METHOD prtmethod);
@@ -41,7 +40,21 @@ extern NODE_SMP * zyn_insertxornode(HEADER * header, NODE_SMP * prev, NODE_SMP *
 extern NODE_SMP * zyn_deletexornode(HEADER * header, NODE_SMP * prev, NODE_SMP * next, NODE_SMP * delnode);
 extern char * zyn_huge_plus(char const * a, char const * b, char * result, int maxlen);
 extern char * zyn_huge_minus(char const * a, char const * b, char * result, int maxlen);
-extern char * zyn_huge_time(char * const a, char * const b, char * result, int maxlen);
+extern char * zyn_huge_multi(char const * a, char const *b, char * result, int maxlen);
+
+
+extern int zyn_test1(void);
+// sort function
+extern int BubbleSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
+extern int SelectSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
+extern int InsertSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
+extern int ShellSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
+extern int MergeSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
+extern int QuickSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
+extern int CountSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
+extern int BucketSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
+extern int RadixSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
+extern int HeapSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
 
 #ifdef __cplusplus
  }

@@ -12,6 +12,7 @@
 #include <stdlib.h>
 static int check_xornode(HEADER *header, NODE_SMP *node);
 static char * huge_pm(char const * a, char const * b, char * result, int maxlen, char inputstatus); /* bit5: a is end, bit4: b is end, bit3: a sgn, bit2: b sgn, bit1 - 0: 10 a max 01 b max */
+static char * huge_multi(char * x, char * y, int len, char * result);
 extern int zyn_test(void)
 {
 	printf("test OK: %d!\n", zyn_gcd(134, 26));
@@ -97,6 +98,7 @@ int zyn_insertSort(void *unsort, int n, int size, int (*compare)(void const *a, 
 	free(key);
 	return moved;
 }
+#if 0
 int zyn_bubbleSort(void *unsort, int n, int size, int (*compare)(void const *, void const *), SORT_METHOD sortby)
 {
 	if( n < 2 || size < 1 || NULL == unsort )
@@ -130,6 +132,7 @@ int zyn_bubbleSort(void *unsort, int n, int size, int (*compare)(void const *, v
 	free(sorted);
 	return moved;
 }
+#endif
 extern HEADER * zyn_initxorll(NODE_SMP * head, NODE_SMP * tail)
 {
 	if( NULL == head || NULL == tail )
@@ -356,4 +359,50 @@ static char * huge_pm(char const * a, char const * b, char * result, int maxlen,
 	free(b_stk_top);
 	free(r_stk_top);
 	return result;
+}
+extern char * zyn_huge_multi(char const * x, char const * y, char * result, int maxlen)
+{
+	if( NULL == x || NULL == y || NULL == result || maxlen < 1 )
+		return NULL;
+	char sgn = 0;
+	int x_len = 0, y_len = 0;
+	while( (' ' == *x || '\t' == *x) && '\0' != *x )
+		++x;
+	if( '-' == *x )
+		++x, sgn ^= 1;
+	char const * x_ptr = x;
+	while( (' ' == *y || '\t' == *y) && '\0' != *y )
+		++y;
+	if( '-' == *y )
+		++y, sgn ^= 1;
+	char const * y_ptr = y;
+	while( '\0' != *x )
+		if( *x >= '0' && *x <= '9' )
+			++x_len, ++x;
+		else
+			break;
+	while( '\0' != *y )
+		if( *y >= '0' && *y <= '9' )
+			++y_len, ++y;
+		else
+			break;
+	int len = x_len > y_len ? x_len : y_len;
+	char * x_tmp = (char *)calloc(len + 1, sizeof(char));
+	char * y_tmp = (char *)calloc(len + 1, sizeof(char));
+	if( NULL == x_tmp || NULL == y_tmp ) {
+		free(x_tmp);
+		free(y_tmp);
+		return NULL;
+	}
+	int i = 0;
+	for( ; i < len; ++i )
+		x_tmp[i] = y_tmp[i] = '0';
+	x_tmp[i] = y_tmp[i] = '\0';
+	snprintf(x_tmp + len - x_len, x_len + 1, "%s", x_ptr);
+	snprintf(y_tmp + len - y_len, y_len + 1, "%s", y_ptr);
+	return huge_multi(x_tmp, y_tmp, len, result);
+}
+static char * huge_multi(char * x, char * y, int len, char * result)
+{
+	return NULL;
 }
