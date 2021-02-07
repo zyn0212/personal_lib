@@ -6,15 +6,15 @@
 	History		: 2021-01-25 creat file with bubble sort
 *********************************************/
 #include "zynfunc.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+#define ARGUMENT_CHECK(a, b, c, d) do {\
+	if( NULL == a || b < 2 || c < 1 )\
+		return -1;\
+	if( NULL == d )\
+		return -2;\
+} while(0)
 static int swap(void * const a, void * const b, int size);
-int zyn_test1(void)
-{
-	printf("test1\n");
-	return 0;
-}
 /*********************************************
 	function 	: BubbleSort_z
 	Description : bubble sort, return -1 when unsort array have error;
@@ -23,29 +23,22 @@ int zyn_test1(void)
 							   return 0 or >0 mean array sorted, the value is time of moving element
 	Author		: zhaoyining
 	Date		: 2021-01-25
-	History		:
+	History		: 2021-02-06 optimize code
 *********************************************/
 int BubbleSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall)
 {
-	if( NULL == unsort || n < 2 || size < 1 )
-		return -1;
-	if( NULL == compare )
-		return -2;
-	int i = 0, j = 0, ischange = 0, movetimes = 0;
-	for( i = 1; i < n; ++i, ischange = 0 )
-	{
-		for( j = n - 1; j >= i; --j )
+	ARGUMENT_CHECK(unsort, n, size, compare);
+	int i = 0, j = 0, ischange = 1, movetimes = 0;
+	for( i = 1; i < n && 0 != ischange; ++i )
+		for( j = n - 1, ischange = 0; j >= i; --j )
 			if( (headIsSmall && compare(unsort + j * size, unsort + (j - 1) * size) < 0)
 			 || (!headIsSmall && compare(unsort + j * size, unsort + (j - 1) * size) > 0) )
 			{
 				if( 0 != swap(unsort + j * size, unsort + (j - 1) * size, size) )
 					return -3;
-				ischange = 1;
-				++movetimes;
+				else
+					ischange = ++movetimes > 0;
 			}
-		if( 0 == ischange )
-			break;
-	}
 	return movetimes;
 }
 /*********************************************
@@ -56,70 +49,47 @@ int BubbleSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
 							   return 0 or >0 mean array sorted, the value is time of moving element
 	Author		: zhaoyining
 	Date		: 2021-01-25
-	History		:
+	History		: 2021-02-07 fix bug and optimize code
 *********************************************/
 int SelectSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall)
 {
-	if( NULL == unsort || n < 2 || size < 1 )
-		return -1;
-	if( NULL == compare )
-		return -2;
-	if( 2 == n )
-		if( (headIsSmall && compare(unsort, unsort + size) > 0)
-		 || (!headIsSmall && compare(unsort, unsort + size) < 0) )
-			if( 0 != swap(unsort, unsort + size, size) )
-					return -3;
-	int i = 0, j = 0, movetimes = 0;
+	ARGUMENT_CHECK(unsort, n, size, compare);
+	int i = 0, j = 0, movetimes = 0, minloc = 0, maxloc = 0, oddnum = n & 1;
 	void *emin = NULL, *emax = NULL;
-	for( i = 0, emin = unsort, emax = unsort + (n - 1) * size; i < n >> 1; ++i )
+	for( i = 0; i < n - i; ++i )
 	{
 		emin = unsort + i * size;
-		emax = unsort + (n - 1 - i) * size;
-		for( j = 1; j < n - (i << 1); ++j )
-			if( compare(unsort + (i + j) * size, emin) < 0 )
-				emin = unsort + (i + j) * size;
-			else if( compare(unsort + (i + j) * size, emax) > 0 )
-				emax = unsort + (i + j) * size;
-		if( headIsSmall )
+		emax = unsort + i * size;
+		for( j = i + 1; j < n - i; ++j )
+			if( compare(unsort + j * size, emin) < 0 )
+				emin = unsort + j * size;
+			else if( compare(unsort + j * size, emax) > 0 )
+				emax = unsort + j * size;
+		minloc = headIsSmall ? i : n - 1 - i;
+		maxloc = headIsSmall ? n - 1 - i : i;
+		switch( oddnum )
 		{
-			if( emin != unsort + i * size )
-			{
-				swap(emin, unsort + i * size, size);
-				++movetimes;
-			}
-			if( emax != unsort + (n - 1 - i) * size )
-			{
-				swap(emax, unsort + (n - 1 - i) * size, size);
-				++movetimes;
-			}
-		}
-		else
-		{
-			if( emax != unsort + i * size )
-			{
-				swap(emax, unsort + i * size, size);
-				++movetimes;
-			}
-			if( emin != unsort + (n - 1 - i) * size )
-			{
-				swap(emin, unsort + (n - 1 - i) * size, size);
-				++movetimes;
-			}
+			case 0://fall through
+				if( headIsSmall )
+					emin = unsort;
+				else
+					emax = unsort;
+				i = -1;
+				oddnum = 1;
+				--n;
+			case 1:default:
+				if( emax == unsort + minloc * size )
+					minloc = maxloc;
+				if( emin != unsort + minloc * size && ++movetimes > 0 )
+					if( 0 != swap(emin, unsort + minloc * size, size) )
+						return -3;
+				if( emax != unsort + maxloc * size && ++movetimes > 0 )
+					if( 0 != swap(emax, unsort + maxloc * size, size) )
+						return -3;
+				break;
 		}
 	}
 	return movetimes;
-}
-static int swap(void * const a, void * const b, int size)
-{
-	void *tmp = calloc(1, size);
-	if( NULL == tmp )
-		return -1;
-	memcpy(tmp, a, size);
-	memcpy(a, b, size);
-	memcpy(b, tmp, size);
-	free(tmp);
-	tmp = NULL;
-	return 0;
 }
 /*********************************************
 	function 	: InsertSort_z
@@ -133,10 +103,7 @@ static int swap(void * const a, void * const b, int size)
 *********************************************/
 int InsertSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall)
 {
-	if( NULL == unsort || n < 2 || size < 1 )
-		return -1;
-	if( NULL == compare )
-		return -2;
+	ARGUMENT_CHECK(unsort, n, size, compare);
 	void *element_tmp = calloc(1, size);
 	if( NULL == element_tmp )
 		return -3;
@@ -357,10 +324,7 @@ int CountSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 				memcpy(sorted + curnum * size, unsort + result[i].location[9] * size, size);
 	memcpy(unsort, sorted, n * size);
 	if( curnum != n )
-	{
-		printf("curnum = %d, n = %d, length = %d\n", curnum, n, length);
 		return -5;
-	}
 	free(result);
 	free(sorted);
 	result = NULL;
@@ -612,6 +576,18 @@ int HeapSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void
 	for( i = 0; i < n; ++i )
 		memcpy(sorted + i * size, unsort + unsort_tmp[i].location * size, size);
 	memcpy(unsort, sorted, n * size);
+	return 0;
+}
+int swap(void * const a, void * const b, int size)
+{
+	void *tmp = calloc(1, size);
+	if( NULL == tmp )
+		return -1;
+	memcpy(tmp, a, size);
+	memcpy(a, b, size);
+	memcpy(b, tmp, size);
+	free(tmp);
+	tmp = NULL;
 	return 0;
 }
 void fixheap(CC *parent, int headIsSmall)

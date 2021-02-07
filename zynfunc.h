@@ -42,8 +42,6 @@ extern char * zyn_huge_plus(char const * a, char const * b, char * result, int m
 extern char * zyn_huge_minus(char const * a, char const * b, char * result, int maxlen);
 extern char * zyn_huge_multi(char const * a, char const *b, char * result, int maxlen);
 
-
-extern int zyn_test1(void);
 // sort function
 extern int BubbleSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
 extern int SelectSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
