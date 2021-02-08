@@ -14,6 +14,12 @@
 	if( NULL == d )\
 		return -2;\
 } while(0)
+typedef struct node {
+	int value;
+	int location;
+	struct node *left;
+	struct node *right;
+} CC;
 static int swap(void * const a, void * const b, int size);
 /*********************************************
 	function 	: BubbleSort_z
@@ -138,10 +144,7 @@ int InsertSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
 *********************************************/
 int ShellSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall)
 {
-	if( NULL == unsort || n < 2 || size < 1 )
-		return -1;
-	if( NULL == compare )
-		return -2;
+	ARGUMENT_CHECK(unsort, n, size, compare);
 	void *element_tmp = calloc(1, size);
 	if( NULL == element_tmp )
 		return -3;
@@ -173,17 +176,14 @@ int ShellSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 	Description : Merge sort, return -1 when unsort array have error;
 							   return -2 compare function have error
 							   return -3 or < -3 when malloc meet error
-							   return 0 mean array sorted, the value is time of moving element
+							   return 0 mean array sorted
 	Author		: zhaoyining
 	Date		: 2021-01-28
 	History		:
 *********************************************/
 int MergeSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall)
 {
-	if( NULL == unsort || n < 2 || size < 1 )
-		return -1;
-	if( NULL == compare )
-		return -2;
+	ARGUMENT_CHECK(unsort, n, size, compare);
 	int ret = 0;
 	switch( n )
 	{
@@ -246,10 +246,7 @@ int MergeSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 *********************************************/
 int QuickSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall)
 {
-	if( NULL == unsort || n < 2 || size < 1 )
-		return -1;
-	if( NULL == compare )
-		return -2;
+	ARGUMENT_CHECK(unsort, n, size, compare);
 	void *element_gap = unsort, *element_left = unsort + size, *element_right = unsort + (n - 1) * size;
 	int find_left = 0, find_right = 0, left_num = 0;
 	while( element_right > element_left )
@@ -283,15 +280,8 @@ int QuickSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 *********************************************/
 int CountSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall)
 {
-	typedef struct {
-		int count;
-		int location[10];
-	} CC;
-	if( NULL == unsort || n < 2 || size < 1 )
-		return -1;
-	if( NULL == compare )
-		return -2;
-	int i = 0, j = 0, length = 0, curnum = 0;
+	ARGUMENT_CHECK(unsort, n, size, compare);
+	int i = 0, length = 0, curnum = 0;
 	void *element_small = unsort, *element_large = unsort;
 	for( ; i < n; ++i )
 		if( compare(unsort + i * size, element_small) < 0 )
@@ -299,35 +289,46 @@ int CountSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 		else if( compare(unsort + i * size, element_large) > 0 )
 			element_large = unsort + i * size;
 	length = compare(element_large, element_small) + 1;
-	CC *result = (CC *)calloc(length, sizeof(CC));
-	if( NULL == result )
+	CC *unsort_tmp = (CC *)calloc(n, sizeof(CC)), *curnode = NULL;
+	if( NULL == unsort_tmp )
 		return -3;
-	void *sorted = calloc(n, size);
-	if( NULL == result )
+	CC *counthead = (CC *)calloc(length, sizeof(CC));
+	if( NULL == counthead )
 	{
-		free(result);
-		result = NULL;
-		return -4;
+		free(unsort_tmp);
+		unsort_tmp = NULL;
+		return -3;
 	}
 	for( i = 0; i < n; ++i )
 	{
 		curnum = compare(unsort + i * size, element_small);
-		if( result[curnum].count < 9 )
-			result[curnum].location[result[curnum].count] = i;
-		++result[curnum].count;
+		unsort_tmp[i].value = curnum;
+		unsort_tmp[i].location = i;
+		curnode = counthead + curnum;
+		while( NULL != curnode->right )
+			curnode = curnode->right;
+		curnode->right = unsort_tmp + i;
+	}
+	void *sorted = calloc(n, size);
+	if( NULL == sorted )
+	{
+		free(unsort_tmp);
+		unsort_tmp = NULL;
+		free(counthead);
+		counthead = NULL;
+		return -4;
 	}
 	for( i = 0, curnum = 0; i < length; ++i )
-		for( j = 0; j < result[i].count; ++j, ++curnum )
-			if( j < 10 )
-				memcpy(sorted + curnum * size, unsort + result[i].location[j] * size, size);
-			else
-				memcpy(sorted + curnum * size, unsort + result[i].location[9] * size, size);
+		for( curnode = headIsSmall ? counthead[i].right : counthead[length - 1 - i].right; NULL != curnode; curnode = curnode->right, ++curnum )
+			memcpy(sorted + curnum * size, unsort + curnode->location * size, size);
 	memcpy(unsort, sorted, n * size);
 	if( curnum != n )
 		return -5;
-	free(result);
+	free(unsort_tmp);
+	unsort_tmp = NULL;
+	free(counthead);
+	counthead = NULL;
 	free(sorted);
-	result = NULL;
 	sorted = NULL;
 	return 0;
 }
@@ -344,14 +345,7 @@ int CountSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 *********************************************/
 int RadixSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall)
 {
-	typedef struct {
-		int value;
-		int location;
-	} CC;
-	if( NULL == unsort || n < 2 || size < 1 )
-		return -1;
-	if( NULL == compare )
-		return -2;
+	ARGUMENT_CHECK(unsort, n, size, compare);
 	CC *unsort_tmp = calloc(n, sizeof(CC));
 	if( NULL == unsort_tmp )
 		return -3;
@@ -373,33 +367,47 @@ int RadixSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 		++radix;
 		length >>= 4;
 	}
-	CC *radixarray = calloc((n + 1) << 4, sizeof(CC));
-	if( NULL == radixarray )
+	CC *radixhead = calloc(16, sizeof(CC)), *curnode = NULL;
+	if( NULL == radixhead )
 	{
 		free(unsort_tmp);
 		unsort_tmp = NULL;
 		return -4;
+	}
+	CC *radix_tmp = calloc(n, sizeof(CC));
+	if( NULL == radix_tmp )
+	{
+		free(unsort_tmp);
+		unsort_tmp = NULL;
+		free(radixhead);
+		radixhead = NULL;
+		return -5;
 	}
 	for( i = 0; i < radix; ++i )
 	{
 		for( j = 0; j < n; ++j )
 		{
 			curnum = unsort_tmp[j].value >> (i << 2) & 0xF;
-			count = ++radixarray[curnum * (n + 1)].value;
-			memcpy(radixarray + curnum * (n + 1) + count, unsort_tmp + j, sizeof(CC));
+			++radixhead[curnum].value;
+			curnode = radixhead + curnum;
+			while( NULL != curnode->right )
+				curnode = curnode->right;
+			curnode->right = unsort_tmp + j;
+			curnode->right->right = NULL;
 		}
 		for( j = 0, curnum = 0; j < 16; ++j )
-			for( k = 0; k < radixarray[j * (n + 1)].value; ++k, ++curnum )
-				memcpy(unsort_tmp + curnum, radixarray + j * (n + 1) + 1 + k, sizeof(CC));
-		memset(radixarray, 0, sizeof(CC) * ((n + 1) << 4));
+			for( curnode = radixhead[j].right; NULL != curnode; curnode = curnode->right, ++curnum )
+				memcpy(radix_tmp + curnum, curnode, sizeof(CC));
+		memset(radixhead, 0, sizeof(CC)  << 4);
+		memcpy(unsort_tmp, radix_tmp, n * sizeof(CC));
 	}
 	void *sorted = calloc(n, size);
 	if( NULL == sorted )
 	{
 		free(unsort_tmp);
-		free(radixarray);
+		free(radixhead);
 		unsort_tmp = NULL;
-		radixarray = NULL;
+		radixhead = NULL;
 		return -5;
 	}
 	for( i = 0; i < n; ++i )
@@ -410,10 +418,12 @@ int RadixSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 	memcpy(unsort, sorted, n * size);
 	free(unsort_tmp);
 	free(sorted);
-	free(radixarray);
+	free(radixhead);
+	free(radix_tmp);
 	unsort_tmp = NULL;
 	sorted = NULL;
-	radixarray = NULL;
+	radixhead = NULL;
+	radix_tmp = NULL;
 	return 0;
 }
 /*********************************************
@@ -429,15 +439,7 @@ int RadixSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 *********************************************/
 int BucketSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall)
 {
-	typedef struct bucket {
-		int value;
-		int location;
-		struct bucket *next;
-	} CC;
-	if( NULL == unsort || n < 2 || size < 1 )
-		return -1;
-	if( NULL == compare )
-		return -2;
+	ARGUMENT_CHECK(unsort, n, size, compare);
 	void *element_small = unsort, *element_large = unsort;
 	CC *unsort_tmp = calloc(n, sizeof(CC));
 	if( NULL == unsort_tmp )
@@ -454,7 +456,7 @@ int BucketSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
 	{
 		unsort_tmp[i].value = compare(unsort + i * size, element_small);
 		unsort_tmp[i].location = i;
-		unsort_tmp[i].next = NULL;
+		unsort_tmp[i].right = NULL;
 	}
 	bucketnum = (length + 15) >> 4;
 	if( 0 == bucketnum )
@@ -479,21 +481,21 @@ int BucketSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
 	{
 		curnum = unsort_tmp[i].value >> 4;
 		curbucket = buckethead + curnum;
-		while( NULL != curbucket->next )
+		while( NULL != curbucket->right )
 		{	
-			if( (headIsSmall && unsort_tmp[i].value <= curbucket->next->value)
-			|| (!headIsSmall && unsort_tmp[i].value >= curbucket->next->value) )
+			if( (headIsSmall && unsort_tmp[i].value <= curbucket->right->value)
+			|| (!headIsSmall && unsort_tmp[i].value >= curbucket->right->value) )
 				break;
-			curbucket = curbucket->next;
+			curbucket = curbucket->right;
 		}
-		curbucketnext_tmp = curbucket->next;
-		curbucket->next = unsort_tmp + i;
-		curbucket->next->next = curbucketnext_tmp;
+		curbucketnext_tmp = curbucket->right;
+		curbucket->right = unsort_tmp + i;
+		curbucket->right->right = curbucketnext_tmp;
 	}
 	for( i = 0, curnum = 0; i < bucketnum; ++i )
 	{
 		j = headIsSmall ? i : bucketnum - 1 - i;
-		for( curbucket = buckethead[j].next; NULL != curbucket; ++curnum, curbucket = curbucket->next )
+		for( curbucket = buckethead[j].right; NULL != curbucket; ++curnum, curbucket = curbucket->right )
 			memcpy(sorted + curnum * size, unsort + curbucket->location * size, size);
 	}
 	memcpy(unsort, sorted, n * size);
@@ -505,12 +507,6 @@ int BucketSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
 	sorted = NULL;
 	return 0;
 }
-typedef struct bucket {
-	int value;
-	int location;
-	struct bucket *left;
-	struct bucket *right;
-} CC;
 static void fixheap(CC *parent, int headIsSmall);
 /*********************************************
 	function 	: HeapSort_z
@@ -525,10 +521,7 @@ static void fixheap(CC *parent, int headIsSmall);
 *********************************************/
 int HeapSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall)
 {
-	if( NULL == unsort || n < 2 || size < 1 )
-		return -1;
-	if( NULL == compare )
-		return -2;
+	ARGUMENT_CHECK(unsort, n, size, compare);
 	CC *unsort_tmp = calloc(n + 1, sizeof(CC));
 	if( NULL == unsort_tmp )
 		return -3;
@@ -573,9 +566,19 @@ int HeapSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void
 		fixheap(unsort_tmp, headIsSmall);
 	}
 	void *sorted = calloc(n, size);
+	if( NULL == sorted )
+	{
+		free(unsort_tmp);
+		unsort_tmp = NULL;
+		return -4;
+	}
 	for( i = 0; i < n; ++i )
 		memcpy(sorted + i * size, unsort + unsort_tmp[i].location * size, size);
 	memcpy(unsort, sorted, n * size);
+	free(unsort_tmp);
+	unsort_tmp = NULL;
+	free(sorted);
+	sorted = NULL;
 	return 0;
 }
 int swap(void * const a, void * const b, int size)
