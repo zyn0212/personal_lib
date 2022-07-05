@@ -52,6 +52,22 @@ extern int BucketSort_z(void *unsort, int n, int size, int (*compare)(void const
 extern int RadixSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
 extern int HeapSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall);
 
+// huge number math base on string
+#define STRING_NUMBER_MAX_LEN 200
+#define STRING_NUMBER_MAX_NUM 300
+extern char* strPlus(char* a, char* b, int base, char* result);
+extern char* strMinus(char* a, char* b, int base, char* result);
+extern char* strTime(char* a, char* b, int base, char* result);
+extern char* strDivide(char* a, char* b, int base, int precision, char* result);
+// interest function
+/*
+   0       1
+    1  2  3
+    8  9  4
+    7  6  5
+   3       2
+*/
+extern int fillTrangl(int startnum, int tranglWide, int* array, int arrayWide, int corner);
 #ifdef __cplusplus
  }
 #endif
