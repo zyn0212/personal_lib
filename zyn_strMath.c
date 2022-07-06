@@ -1,4 +1,11 @@
-#include "testStrMath.h"
+/*********************************************
+	File name	: zyn_strMath.c
+	Description : personal huge number calculate function base on string
+	Author		: zhaoyining
+	Date		: 2022-07-05
+	History		: 2022-07-05 creat file
+*********************************************/
+#include "zynfunc.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

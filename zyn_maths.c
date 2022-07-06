@@ -7,8 +7,8 @@
 *********************************************/
 #include "zynfunc.h"
 /*********************************************
-	function 	: lcm_z
-	Description : return greatest common divisor of a and b;
+	function 	: gcd_z
+	Description : 返回 a 和 b 的最大公约数，返回值非负，忽略参数中的负号，当a或者b是零时，返回0
 	Author		: zhaoyining
 	Date		: 2021-02-09
 	History		: 2021-02-09
@@ -17,19 +17,18 @@ int gcd_z(int a, int b)
 {
 	if( 0 == a || 0 == b )
 		return 0;
-	int tmp = 0;
 	a = a < 0 ? -a : a;
 	b = b < 0 ? -b : b;
-	while( 0 != (tmp = a % b) )
+	while( 0 !=  a % b )
 	{
-		a = b;
-		b = tmp;
+		a %= b;
+        a ^= b ^= a ^= b;
 	}
 	return b;
 }
 /*********************************************
 	function 	: lcm_z
-	Description : return least common multiple of a and b;
+	Description : 返回a 和 b 的最小公倍数， 返回值非负，忽略参数中的负号，当a或者b是零时，返回0
 	Author		: zhaoyining
 	Date		: 2021-02-09
 	History		: 2021-02-09
@@ -49,7 +48,7 @@ int lcm_z(int a, int b)
 }
 /*********************************************
 	function 	: qpow_z
-	Description : return base ^ x;
+	Description : 快速开方函数，当base是零是返回0，当base是1或者x小于1时返回1
 				  return 0 when base is 0
 				  return 1 when base is 1 or x < 1
 	Author		: zhaoyining
@@ -60,9 +59,7 @@ long qpow_z(int base, int x)
 {
 	if( 0 == base )
 		return 0;
-	else if( 1 == base )
-		return 1;
-	else if( x < 1 )
+	else if( 1 == base || x < 1 )
 		return 1;
 	long  ret = 1, base_tmp = (long)base, overflow = 0;
 	for( ; 0 != x; x >>= 1, overflow = isOverFlow_mul_z(base_tmp, base_tmp), base_tmp *= base_tmp )
@@ -74,8 +71,7 @@ long qpow_z(int base, int x)
 }
 /*********************************************
 	function 	: isPrime_z
-	Description : return 1 when input number is prime, return 0 when not;
-				  return 1 when input number is 1
+	Description : 素数函数，参数是否是素数，返回1, 否则返回0，参数是1是返回1
 	Author		: zhaoyining
 	Date		: 2021-02-11
 	History		: 2021-02-11
