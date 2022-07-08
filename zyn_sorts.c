@@ -56,45 +56,29 @@ int BubbleSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
 	Author		: zhaoyining
 	Date		: 2021-01-25
 	History		: 2021-02-07 fix bug and optimize code
+	            : 2022-07-08 advance algorythm
 *********************************************/
 int SelectSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void const *b), int headIsSmall)
 {
 	ARGUMENT_CHECK(unsort, n, size, compare);
-	int i = 0, j = 0, movetimes = 0, minloc = 0, maxloc = 0, oddnum = n & 1;
+	int i = 0, j = 0, movetimes = 0, minloc = 0, maxloc = 0;
 	void *emin = NULL, *emax = NULL;
 	for( i = 0; i < n - i; ++i )
 	{
-		emin = unsort + i * size;
-		emax = unsort + i * size;
-		for( j = i + 1; j < n - i; ++j )
-			if( compare(unsort + j * size, emin) < 0 )
-				emin = unsort + j * size;
-			else if( compare(unsort + j * size, emax) > 0 )
-				emax = unsort + j * size;
 		minloc = headIsSmall ? i : n - 1 - i;
 		maxloc = headIsSmall ? n - 1 - i : i;
-		switch( oddnum )
-		{
-			case 0://fall through
-				if( headIsSmall )
-					emin = unsort;
-				else
-					emax = unsort;
-				i = -1;
-				oddnum = 1;
-				--n;
-			case 1:default:
-				if( emax == unsort + minloc * size )
-					minloc = maxloc;
-				if( emin != unsort + minloc * size && ++movetimes > 0 )
-					if( 0 != swap(emin, unsort + minloc * size, size) )
-						return -3;
-				if( emax != unsort + maxloc * size && ++movetimes > 0 )
-					if( 0 != swap(emax, unsort + maxloc * size, size) )
-						return -3;
-				break;
-		}
-	}
+        for( j = i, emin = unsort + minloc * size, emax = unsort + maxloc * size; j < n - i; ++j )
+            if( compare(unsort + j * size, emin) < 0 )
+                emin = unsort + j * size;
+            else if( compare(unsort + j * size, emax) > 0 )
+                emax = unsort + j * size;
+        if( emin != unsort + minloc * size && ++movetimes > 0 )
+            if( 0 != swap(emin, unsort + minloc * size, size) )
+                return -3;
+        if( (emax = unsort + minloc * size == emax ? emin : emax) != unsort+ maxloc * size && ++movetimes > 0 )
+            if( 0 != swap(emax, unsort + maxloc * size, size) )
+                return -3;
+    }
 	return movetimes;
 }
 /*********************************************
@@ -583,6 +567,8 @@ int HeapSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void
 }
 int swap(void * const a, void * const b, int size)
 {
+    if( a == b )
+        return 0;
 	void *tmp = calloc(1, size);
 	if( NULL == tmp )
 		return -1;
