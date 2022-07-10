@@ -9,7 +9,7 @@
 #include <stdio.h>
 /*********************************************
 	function 	: fillTrangl
-	Description : 按照顺时针和递增的顺序填充一个正方形螺旋矩阵
+	Description : 按照顺时针和递增的顺序填充一个正方形螺旋矩阵，返回最后的填充数字
     Parameter   : startnum 矩阵的起始数字，trangeWide 矩阵宽度, array 数组地址(如果是二维数组需要强制转换),arrayWide 数组的行宽度
                   corner起始填充角: 1 右上， 2 右下， 3 左下， 其他 左上
     Author		: zhaoyining

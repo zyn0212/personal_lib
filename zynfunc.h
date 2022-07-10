@@ -22,8 +22,10 @@ typedef struct {
 
 // XOR linked list function
 extern HEADER* initXorLinkedList(NODE_SMP* head, NODE_SMP* next, int nodeNum);
-extern int destoryXorLinkedList(HEADER * header);
-extern NODE_SMP* addNextXorNode(HEADER* header, NODE_SMP* prev, NODE_SMP* current, NODE_SMP* newNode);
+extern int destoryXorLLHeader(HEADER * header);
+extern NODE_SMP* insertNewXorNode(HEADER* header, NODE_SMP* prev, NODE_SMP* newNode, NODE_SMP* next);
+extern NODE_SMP* addNewXorNode(HEADER* header, NODE_SMP* prev, NODE_SMP* current, NODE_SMP* newNode);
+extern NODE_SMP* addXorNodeBetweenF_S(HEADER* header, NODE_SMP* prev, NODE_SMP* newNode);
 extern NODE_SMP* deleteXorNode(HEADER* header, NODE_SMP* prev, NODE_SMP* deleteNode, NODE_SMP* next);
 extern NODE_SMP* getNextXorNode(NODE_SMP* prev, NODE_SMP* current);
 
