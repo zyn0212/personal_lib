@@ -63,6 +63,7 @@ extern char* strDivide(char* a, char* b, int base, int precision, char* result);
    3       2
 */
 extern int fillTrangl(int startnum, int tranglWide, int* array, int arrayWide, int corner);
+extern int convertHex2Oct(char* hex, char* result);
 #ifdef __cplusplus
  }
 #endif
