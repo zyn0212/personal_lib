@@ -64,6 +64,7 @@ extern char* strDivide(char* a, char* b, int base, int precision, char* result);
 */
 extern int fillTrangl(int startnum, int tranglWide, int* array, int arrayWide, int corner);
 extern int convertHex2Oct(char* hex, char* result);
+extern int zyn_cvtDecToX(unsigned long long s, unsigned int base, char* result, int maxLen);
 #ifdef __cplusplus
  }
 #endif
