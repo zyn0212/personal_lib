@@ -4,11 +4,13 @@
 	Author		: zhaoyining
 	Date		: 2022-07-05
 	History		: 2022-07-05 creat file
+	History		: 2024-08-24 add string KMP alog 
 *********************************************/
 #include "zynfunc.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#define PRECISION_MAX 200
 typedef struct {
     int compResult;
     int aSign;
@@ -18,33 +20,32 @@ typedef struct {
     int bPrefix;
     int bValidLen;
 } STR_ABS_COMP_STATUS;
-#define PRECISION_MAX 200
-static int getStrAbsStatus_(char* a, char* b, int base, STR_ABS_COMP_STATUS* result);
-static int strNumberCheck(char c, int base);
-static char* strPlus_(char* a, char* b, int base, char* result);
-static char* strMinus_(char* a, char* b, int base, char* result);
+static int _getStrAbsStatus(char* a, char* b, int base, STR_ABS_COMP_STATUS* result);
+static int _strNumberCheck(char c, int base);
+static char* _strPlus(char* a, char* b, int base, char* result);
+static char* _strMinus(char* a, char* b, int base, char* result);
+static int _getNext(const char* s, const int len, int* next);
 char* strPlus(char* a, char* b, int base, char* result)
 {
     char* ret = result;
-    STR_ABS_COMP_STATUS absResult = {0, 0, 0, 0, 0};
-    if( 0 != getStrAbsStatus_(a, b, base, &absResult) ) {
+    STR_ABS_COMP_STATUS absResult = {0};
+    if( 0 != _getStrAbsStatus(a, b, base, &absResult) ) {
         printf("fatal error: meet error in parameters!\n");
         return NULL;
     }
-
     a += absResult.aPrefix;
     b += absResult.bPrefix;
     char* max = 1 == absResult.compResult ? a : b, * min = 1 == absResult.compResult ? b : a;
     if( -1 == absResult.compResult && -1 == absResult.aSign || 1 == absResult.compResult && -1 == absResult.bSign )
         *ret++ = '-';
-    absResult.aSign == absResult.bSign ? strPlus_(max, min, base, ret) : strMinus_(max, min, base, ret);
+    absResult.aSign == absResult.bSign ? _strPlus(max, min, base, ret) : _strMinus(max, min, base, ret);
     return result;
 }
 char* strMinus(char* a, char* b, int base, char* result)
 {
     char* ret = result;
     STR_ABS_COMP_STATUS absResult = {0, 0, 0, 0, 0};
-    if( 0 != getStrAbsStatus_(a, b, base, &absResult) ) {
+    if( 0 != _getStrAbsStatus(a, b, base, &absResult) ) {
         printf("fatal error: meet error in parameters!\n");
         return NULL;
     }
@@ -53,14 +54,14 @@ char* strMinus(char* a, char* b, int base, char* result)
     char* max = 1 == absResult.compResult ? a : b, * min = 1 == absResult.compResult ? b : a;
     if( 1 == absResult.compResult && -1 == absResult.aSign || -1 == absResult.compResult && 1 == absResult.bSign || 0 == absResult.compResult && -1 == absResult.aSign && 1 == absResult.bSign )
         *ret++ = '-';
-    absResult.aSign != absResult.bSign ? strPlus_(max, min, base, ret) : strMinus_(max, min, base, ret);
+    absResult.aSign != absResult.bSign ? _strPlus(max, min, base, ret) : _strMinus(max, min, base, ret);
     return result;
 }
 char* strTime(char* a, char* b, int base, char* result)
 {
     char* retp = result;
     STR_ABS_COMP_STATUS absResult = {0, 0, 0, 0, 0};
-    if( 0 != getStrAbsStatus_(a, b, base, &absResult) ) {
+    if( 0 != _getStrAbsStatus(a, b, base, &absResult) ) {
         printf("fatal error: meet error in parameters!\n");
         return NULL;
     }
@@ -95,7 +96,7 @@ char* strDivide(char* a, char* b, int base, int precision, char* result)
 {
     char* resultp = result;
     STR_ABS_COMP_STATUS absResult = {0, 0, 0, 0, 0};
-    if( 0 != getStrAbsStatus_(a, b, base, &absResult) || precision > PRECISION_MAX ) {
+    if( 0 != _getStrAbsStatus(a, b, base, &absResult) || precision > PRECISION_MAX ) {
         printf("fatal error: meet error in parameters!\n");
         return NULL;
     }
@@ -122,7 +123,7 @@ char* strDivide(char* a, char* b, int base, int precision, char* result)
         if( '\0' == *a && 0 == hasPoint )
             hasPoint = 1, *retp++ = '.';
         sprintf(tmpUpNumber, "%s%c", tmpUpNumber, '\0' == *a ? '0' : *a++);
-        for( tmpc = 0, getStrAbsStatus_(tmpUpNumber, b, base, &absResult); tmpc < base && -1 != absResult.compResult; getStrAbsStatus_(tmpUpNumber, b, base, &absResult), ++tmpc )
+        for( tmpc = 0, _getStrAbsStatus(tmpUpNumber, b, base, &absResult); tmpc < base && -1 != absResult.compResult; _getStrAbsStatus(tmpUpNumber, b, base, &absResult), ++tmpc )
             strMinus(tmpUpNumber, b, base, tmpUpNumber);
         *retp++ = 16 == base && tmpc > 9 ? tmpc - 10 + 'A' : tmpc + '0';
     }
@@ -152,7 +153,50 @@ static int trimPrefix_(char* a, int base, int* sign)
     *sign = signPre;
     return ap - a;
 }
-static int getStrAbsStatus_(char* a, char* b, int base, STR_ABS_COMP_STATUS* result)
+/*********************************************
+	function 	: zyn_kmp 
+	Description : 在s字符串中匹配p字符串,未找到返回NULL，否则返回第一个匹配到的字符串位置
+	Author		: zhaoyining
+	Date		: 2024-08-24
+	History		: 
+*********************************************/
+char* zyn_kmp(const char* s, const int slen, const char* p, const int plen)
+{
+    if( NULL == s || slen < 1 || NULL == p || plen < 1 )
+        return NULL;
+    int pl = strlen(p) < plen ? strlen(p) : plen;
+    if( pl < 1 )
+        return s;
+    int* next = (int*)malloc((pl > 1 ? pl : 2) * sizeof(int)), i = 0, j = 0;
+    if( 0 != _getNext(p, pl, next) )
+        return NULL;
+    while( i < slen && j < pl )
+        j = (-1 == j || s[i] == p[j]) && ++i ? j + 1 : next[j];
+    free(next);
+    next = NULL;
+    return pl == j ? s + i - j : NULL;
+}
+/*********************************************
+	function 	: 静态函数区
+	Description : 本文件函数使用的功能函数
+	Author		: zhaoyining
+	Date		: 2024-08-24
+	History		: 
+*********************************************/
+static int _getNext(const char* s, const int len, int* next)
+{
+    if( NULL == next )
+        return -1;
+    next[0] = -1, next[1] = 0;
+    int i = 2, j = 0;
+    while( i <= len )
+        if( -1 == j || s[i - 1] == s[j] )
+            next[i++] = ++j;
+        else
+            j = next[j];
+    return 0;
+}
+static int _getStrAbsStatus(char* a, char* b, int base, STR_ABS_COMP_STATUS* result)
 {
     if( NULL == a || NULL == b || base < 2 || NULL == result )
         return -1;
@@ -160,12 +204,12 @@ static int getStrAbsStatus_(char* a, char* b, int base, STR_ABS_COMP_STATUS* res
     a += aPrefix = trimPrefix_(a, base, &aSign);
     b += bPrefix = trimPrefix_(b, base, &bSign);
     char *ap = a, *bp = b;
-    for( ; 0 == strNumberCheck(*ap, base); ++aValidLen ) {
+    for( ; 0 == _strNumberCheck(*ap, base); ++aValidLen ) {
         ++ap;
     }
     if( '\0' != *ap )
         return -2;
-    for( ; 0 == strNumberCheck(*bp, base); ++bValidLen )
+    for( ; 0 == _strNumberCheck(*bp, base); ++bValidLen )
         ++bp;
     if( '\0' != *bp )
         return -3;
@@ -188,7 +232,7 @@ static int getStrAbsStatus_(char* a, char* b, int base, STR_ABS_COMP_STATUS* res
     result->bValidLen = bValidLen;
     return 0;
 }
-static int strNumberCheck(char c, int base)
+static int _strNumberCheck(char c, int base)
 {
     int ret = -1;
     switch( base ) {
@@ -213,7 +257,7 @@ static int strNumberCheck(char c, int base)
     }
     return ret;
 }
-static char* strPlus_(char* a, char* b, int base, char* result)
+static char* _strPlus(char* a, char* b, int base, char* result)
 {
     char tmpResult[STRING_NUMBER_MAX_LEN];
     memset(tmpResult, 0, sizeof tmpResult);
@@ -242,7 +286,7 @@ static char* strPlus_(char* a, char* b, int base, char* result)
     sprintf(result, "%s", tmpResult + ('0' == tmpResult[0] ? 1 : 0));
     return result;
 }
-static char* strMinus_(char* a, char* b, int base, char* result)
+static char* _strMinus(char* a, char* b, int base, char* result)
 {
     char tmpResult[STRING_NUMBER_MAX_LEN];
     memset(tmpResult, 0, sizeof tmpResult);

@@ -1,6 +1,6 @@
 /*********************************************
-	File name	: zyn_maths.c
-	Description : personal math function
+	File name	: zyn_interest.c
+	Description : personal insterest function
 	Author		: zhaoyining
 	Date		: 2022-07-05
 	History		: 2022-07-05 creat file with fillTrangl function
