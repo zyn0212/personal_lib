@@ -1,5 +1,5 @@
 /*********************************************
-	File name	: zyn_maths.c
+	File name	: zyn_intMath.c
 	Description : personal math function
 	Author		: zhaoyining
 	Date		: 2021-02-09
