@@ -53,7 +53,7 @@ extern int HeapSort_z(void *unsort, int n, int size, int (*compare)(void const *
 extern char* strPlus(char* a, char* b, int base, char* result);
 extern char* strMinus(char* a, char* b, int base, char* result);
 extern char* strTime(char* a, char* b, int base, char* result);
-extern char* strDivide(char* a, char* b, int base, int precision, char* result);
+extern char* strDivide(char* a, char* b, int base, char* quot, char* rem);
 extern char* zyn_kmp(const char* s, const int slen, const char* p, const int plen);
 // interest function
 /*

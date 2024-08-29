@@ -1,5 +1,10 @@
 .DS_Store
+a.c
+b.c
+c.c
+d.c
 a.out
 test.c
 tt
 libzynfunc.so
+*.swp

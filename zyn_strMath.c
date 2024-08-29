@@ -1,16 +1,18 @@
 /*********************************************
 	File name	: zyn_strMath.c
-	Description : personal huge number calculate function base on string
+	Description : personal string algorithm: huge number calculate function, match function
 	Author		: zhaoyining
 	Date		: 2022-07-05
 	History		: 2022-07-05 creat file
 	History		: 2024-08-24 add string KMP alog 
+	History		: 2024-08-24 revise string plus and minus
+	History		: 2024-08-26 revise string time
+	History		: 2024-08-29 revise string divide
 *********************************************/
 #include "zynfunc.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#define PRECISION_MAX 200
 typedef struct {
     char cmpRet;
     char aSgn;
@@ -24,9 +26,18 @@ typedef struct {
 static STR_ABS_COMP_RESULT _getStrAbsStatus(char* a, char* b, int base);
 static char* _trimPrefix(char* a, int base, char* sign);
 static int _strChrCheck(char c, int base);
+static inline char _getChrVal(char c, int base);
 static char* _strPlus(char* a, char* b, int base, char* result);
 static char* _strMinus(char* a, char* b, int base, char* result);
+static char* _strDivide( STR_ABS_COMP_RESULT st, int base, char* quot, char* rem);
 static int _getNext(const char* s, const int len, int* next);
+/*********************************************
+	function 	: strPlus 
+	Description : 字符串数字加法
+	Author		: zhaoyining
+	Date		: 2024-08-24
+	History		: 
+*********************************************/
 char* strPlus(char* a, char* b, int base, char* result)
 {
     STR_ABS_COMP_RESULT absRet = _getStrAbsStatus(a, b, base);
@@ -39,10 +50,19 @@ char* strPlus(char* a, char* b, int base, char* result)
     else {
         if( 1 == absRet.cmpRet && -1 == absRet.aSgn || -1 == absRet.cmpRet && -1 == absRet.bSgn )
             *ret++ = '-';
+        if( 16 == base )
+            *ret++ = '0', *ret++ = 'x';
         absRet.aSgn == absRet.bSgn ? _strPlus(max, min, base, ret) : _strMinus(max, min, base, ret);
     }
     return result;
 }
+/*********************************************
+	function 	: strMinus
+	Description : 字符串数字减法
+	Author		: zhaoyining
+	Date		: 2024-08-24
+	History		: 
+*********************************************/
 char* strMinus(char* a, char* b, int base, char* result)
 {
     STR_ABS_COMP_RESULT absRet = _getStrAbsStatus(a, b, base);
@@ -52,90 +72,89 @@ char* strMinus(char* a, char* b, int base, char* result)
     char* min = 1 != absRet.cmpRet ? absRet.aVldP : absRet.bVldP, * ret = result;
     if( 0 == absRet.cmpRet && absRet.aSgn == absRet.bSgn )
         ret[0] = '0', ret[1] = '\0';
-    if( 1 == absRet.aSgn && 1 == absRet.bSgn && -1 == absRet.cmpRet
-        || -1 == absRet.aSgn && (1 == absRet.bSgn || -1 == absRet.bSgn && 1 == absRet.cmpRet) )
-        *ret++ = '-';
-    absRet.aSgn != absRet.bSgn ? _strPlus(max, min, base, ret) : _strMinus(max, min, base, ret);
+    else {
+        if( 1 == absRet.aSgn && 1 == absRet.bSgn && -1 == absRet.cmpRet
+            || -1 == absRet.aSgn && (1 == absRet.bSgn || -1 == absRet.bSgn && 1 == absRet.cmpRet) )
+            *ret++ = '-';
+        if( 16 == base )
+            *ret++ = '0', *ret++ = 'x';
+        absRet.aSgn != absRet.bSgn ? _strPlus(max, min, base, ret) : _strMinus(max, min, base, ret);
+    }
     return result;
 }
-#if 0
+/*********************************************
+	function 	: strTime
+	Description : 字符串数字乘法
+	Author		: zhaoyining
+	Date		: 2024-08-26
+	History		: 
+*********************************************/
 char* strTime(char* a, char* b, int base, char* result)
 {
-    char* retp = result;
-    STR_ABS_COMP_RESULT absResult = {0, 0, 0, 0, 0};
-    if( 0 != _getStrAbsStatus(a, b, base, &absResult) ) {
-        printf("fatal error: meet error in parameters!\n");
+    STR_ABS_COMP_RESULT absRet = _getStrAbsStatus(a, b, base);
+    if( 1 != absRet.status )
         return NULL;
+    a = absRet.aVldP, b = absRet.bVldP;
+    if( 0 == absRet.aVldL || 0 == absRet.bVldL ) {
+        result[0] = '0', result[1] = '\0';
+        return result;
     }
-    a += absResult.aPrefix;
-    b += absResult.bPrefix;
-    int isNegative = 0;
-    if( absResult.aSign != absResult.bSign )
-        *retp++ = '-', isNegative = 1;
-    if( absResult.aValidLen + absResult.bValidLen + 2 + isNegative >= STRING_NUMBER_MAX_LEN - 1 )
+    if( absRet.aVldL + absRet.bVldL + (absRet.aSgn != absRet.bSgn ? 1 : 0) + (16 == base ? 2 : 0) >= STRING_NUMBER_MAX_LEN - 1 )
         return NULL;
-    int aLen = 0, bLen = 0, resLen = 0, tmpResult[STRING_NUMBER_MAX_LEN], upbit = 0;
-    memset(tmpResult, 0, sizeof tmpResult);
-    for( ; aLen < absResult.aValidLen; resLen = resLen < aLen + bLen ? aLen + bLen : resLen, ++aLen )
-        for( bLen = 0; bLen < absResult.bValidLen; ++bLen ) {
-            int tmpa = 16 == base && 'a' <= (a[aLen] | 0x20) && (a[aLen] | 0x20) <= 'f' ? (a[aLen] | 0x20) - 'a' + 10 : a[aLen] - '0';
-            int tmpb = 16 == base && 'a' <= (b[bLen] | 0x20) && (b[bLen] | 0x20) <= 'f' ? (b[bLen] | 0x20) - 'a' + 10 : b[bLen] - '0';
-            tmpResult[aLen + bLen + 1] += tmpa * tmpb;
-        }
-    char tmpResultStr[STRING_NUMBER_MAX_LEN];
-    div_t tmp = {0, 0};
-    for( tmpResultStr[resLen + 1] = '\0'; resLen >= 0; --resLen ) {
-        tmp = div(tmpResult[resLen] + tmp.quot, base);
-        tmpResultStr[resLen] = 16 == base && tmp.rem > 9 ? tmp.rem - 10 + 'A' : tmp.rem + '0';
-    }
-    char* tmpRSp = tmpResultStr;
-    while( '0' == *tmpRSp )
-        ++tmpRSp;
-    sprintf(retp, "%s", tmpRSp);
+    int tmpResult[STRING_NUMBER_MAX_LEN] = {0}, i = 0, j = 0;
+    for( char tmpa = _getChrVal(a[i], base); i < absRet.aVldL; tmpa = _getChrVal(a[++i], base), j = 0 )
+        for( char tmpb = _getChrVal(b[j], base); j < absRet.bVldL; tmpb = _getChrVal(b[++j], base) )
+            tmpResult[i + 1 + j] += tmpa * tmpb;
+    div_t tmp = div(tmpResult[i = absRet.aVldL - 1 + absRet.bVldL - 1 + 1], base);
+    char tmpRet[STRING_NUMBER_MAX_LEN] = {'\0'}, * retp = tmpRet;
+    for( ; i >= 0; tmp = div(tmpResult[--i] + tmp.quot, base) )
+        tmpRet[i] = tmp.rem + (16 == base && tmp.rem > 9 ? 'A' - 10 : '0');
+    while( '0' == *retp && '\0' != retp[1] )
+        ++retp;
+    sprintf(result, "%s%s%s", absRet.aSgn != absRet.bSgn ? "-" : "", 16 == base ? "0x" : "", retp);
     return result;
 }
-char* strDivide(char* a, char* b, int base, int precision, char* result)
+/*********************************************
+	function 	: strDivide
+	Description : 字符串数字除法
+	Author		: zhaoyining
+	Date		: 2024-08-29
+	History		: 
+*********************************************/
+extern char* strDivide(char* a, char* b, int base, char* quot, char* rem)
 {
-    char* resultp = result;
-    STR_ABS_COMP_RESULT absResult = {0, 0, 0, 0, 0};
-    if( 0 != _getStrAbsStatus(a, b, base, &absResult) || precision > PRECISION_MAX ) {
-        printf("fatal error: meet error in parameters!\n");
+    STR_ABS_COMP_RESULT absRet = _getStrAbsStatus(a, b, base);
+    if( 1 != absRet.status || NULL == quot || NULL == rem )
         return NULL;
-    }
-    a += absResult.aPrefix;
-    b += absResult.bPrefix;
-    char* checkZero = b;
-    while( '0' == *checkZero )
-        ++checkZero;
-    if( '\0' == *checkZero ) {
-        printf("divisor string is illegal!\n");
+    a = absRet.aVldP, b = absRet.bVldP;
+    if( 0 == absRet.bVldL || 1 == absRet.bVldL && '0' == *absRet.bVldP )
         return NULL;
+    else if( 0 == absRet.aVldL || 1 == absRet.aVldL && '0' == *absRet.aVldP ) {
+        quot[0] == '0', quot[1] = '\0';
+        rem[0] = '0', rem[1] = '\0';
+        return quot;
     }
-    if( absResult.aSign != absResult.bSign )
-        *resultp++ = '-';
-    char tmpUpNumber[STRING_NUMBER_MAX_LEN], tmpResult[STRING_NUMBER_MAX_LEN];
-    char* retp = tmpResult;
-    memset(tmpResult, 0, sizeof tmpResult);
-    if( -1 == absResult.compResult )
-        *retp++ = '0';
-    int hasPoint = 0, tmpc = 0;
-    sprintf(tmpUpNumber, "%.*s", absResult.bValidLen - 1, a);
-    a += absResult.aValidLen < absResult.bValidLen - 1? absResult.aValidLen : absResult.bValidLen - 1;
-    for( ; precision > 0; precision -= hasPoint ) {
-        if( '\0' == *a && 0 == hasPoint )
-            hasPoint = 1, *retp++ = '.';
-        sprintf(tmpUpNumber, "%s%c", tmpUpNumber, '\0' == *a ? '0' : *a++);
-        for( tmpc = 0, _getStrAbsStatus(tmpUpNumber, b, base, &absResult); tmpc < base && -1 != absResult.compResult; _getStrAbsStatus(tmpUpNumber, b, base, &absResult), ++tmpc )
-            strMinus(tmpUpNumber, b, base, tmpUpNumber);
-        *retp++ = 16 == base && tmpc > 9 ? tmpc - 10 + 'A' : tmpc + '0';
+    char* qp = quot;
+    if( absRet.aSgn != absRet.bSgn )
+        *qp++ = '-';
+    if( 16 == base ) {
+        *qp++ = '0', *rem++ = '0';
+        *qp++ = 'x', *rem++ = 'x';
     }
-    *retp = '\0';
-    for( retp = tmpResult; '0' == *retp && '.' != *(retp + 1); ++retp )
-        continue;
-    sprintf(resultp, "%s", retp);
-    return result;
+    if( absRet.cmpRet < 0 ) {
+        sprintf(qp, "%s", absRet.aVldP);
+        sprintf(rem, "%s", absRet.bVldP);
+    }
+    else {
+        if( 0 == absRet.cmpRet ) {
+            *qp++ = '1', *qp++ = '\0';
+            *rem++ = '0', *rem++ = '\0';
+        }
+        else
+            _strDivide(absRet, base, qp, rem);
+    }
+    return quot;
 }
-#endif
 /*********************************************
 	function 	: zyn_kmp 
 	Description : 在s字符串中匹配p字符串,未找到返回NULL，否则返回第一个匹配到的字符串位置
@@ -199,8 +218,8 @@ static STR_ABS_COMP_RESULT _getStrAbsStatus(char* a, char* b, int base)
         ret.cmpRet = ret.aVldL > ret.bVldL ? 1 : -1;
     else
         for( ret.cmpRet = 0, a = ret.aVldP, b = ret.bVldP; '\0' != *a; ++a, ++b )
-            if( *a != *b ) {
-                ret.cmpRet = *a > *b ? 1 : -1;
+            if( (*a | 0x20) != (*b | 0x20) ) {
+                ret.cmpRet = (*a | 0x20) > (*b | 0x20) ? 1 : -1;
                 break;
             }
     return ret;
@@ -210,7 +229,7 @@ static char* _trimPrefix(char* a, int base, char* sign)
     char* ap = a;
     while( ' ' == *ap || '\t' == *ap )
         ++ap;
-    *sign = '-' == *ap || '+' == *ap ?  '-' == *ap++ ? -1 : 1 : 1;
+    *sign = '\0' == *ap || '-' == *ap || '+' == *ap ?  '-' == *ap++ ? -1 : 1 : 1;
     while( ' ' == *ap || '\t' == *ap )
         ++ap;
     if( 16 == base && '0' == *ap && 'x' == (ap[1] | 0x20) )
@@ -251,17 +270,12 @@ static char* _strPlus(char* a, char* b, int base, char* result)
         return NULL;
     char upbit = 0;
     for( --aLen, --bLen; resultLen >= 0; --aLen, --bLen, --resultLen ) {
-        char tmpa = 0, tmpb = 0;
-        if( aLen >= 0 )
-            tmpa = (a[aLen] | 0x20) - (16 == base && 'a' <= (a[aLen] | 0x20) && (a[aLen] | 0x20) <= 'f' ? 'a' - 10 : '0');
-        if( bLen >= 0 )
-            tmpb = (b[bLen] | 0x20) - (16 == base && 'a' <= (b[bLen] | 0x20) && (b[bLen] | 0x20) <= 'f' ? 'a' - 10 : '0');
-        char tmpSum = tmpa + tmpb + upbit;
+        char tmpa = aLen >= 0 ? _getChrVal(a[aLen], base) : 0, tmpb = bLen >= 0 ? _getChrVal(b[bLen], base) : 0, tmpSum = tmpa + tmpb + upbit;
         upbit = tmpSum >= base ? 1 : 0;
         tmpSum -= base * upbit;
         tmpResult[resultLen] = (16 == base && tmpSum > 9 ? 'A' - 10 : '0') + tmpSum;
     }
-    sprintf(result, "%s%s", 16 == base ? "0x" : "", tmpResult + ('0' == tmpResult[0] ? 1 : 0));
+    sprintf(result, "%s", tmpResult + ('0' == tmpResult[0] ? 1 : 0));
     return result;
 }
 static char* _strMinus(char* a, char* b, int base, char* result)
@@ -272,19 +286,61 @@ static char* _strMinus(char* a, char* b, int base, char* result)
         return NULL;
     char upbit = 0;
     for( --aLen, --bLen; aLen >= 0; --aLen, --bLen ) {
-        char tmpa = 0, tmpb = 0;
-        if( aLen >= 0 )
-            tmpa = (a[aLen] | 0x20) - (16 == base && 'a' <= (a[aLen] | 0x20) && (a[aLen] | 0x20) <= 'f' ? 'a' - 10 : '0');
-        if( bLen >= 0 )
-            tmpb = (b[bLen] | 0x20) - (16 == base && 'a' <= (b[bLen] | 0x20) && (b[bLen] | 0x20) <= 'f' ? 'a' - 10 : '0');
+        char tmpa = aLen >= 0 ? _getChrVal(a[aLen], base) : 0, tmpb = bLen >= 0 ? _getChrVal(b[bLen], base) : 0;
         tmpa -= upbit;
         upbit = tmpa < tmpb ? 1 : 0;
         char tmpSum = tmpa + upbit * base - tmpb;
         tmpResult[aLen] = (16 == base && tmpSum > 9 ? 'A' - 10 : '0') + tmpSum;
     }
     char* retp = tmpResult;
-    while( '0' == *retp )
+    while( '0' == *retp && '\0' != retp[1] )
         ++retp;
-    sprintf(result, "%s%s", 16 == base ? "0x" : "", '\0' == *retp ? "0" : retp);
+    sprintf(result, "%s", '\0' == *retp ? "0" : retp);
     return result;
+}
+static char* _strDivide( STR_ABS_COMP_RESULT st, int base, char* quot, char* rem)
+{
+    char* tmpNum = (char*)calloc((st.bVldL << 1) + 3, sizeof(char));
+    if( NULL == tmpNum )
+        return NULL;
+    char quotVal = 0, *np = NULL, * qp = quot, * tmpRem = tmpNum + st.bVldL + 2;
+    snprintf(tmpNum, st.bVldL + 1, "%s", st.aVldP);
+    snprintf(tmpRem, st.bVldL + 1, "%s", st.aVldP);
+    STR_ABS_COMP_RESULT numSt = {0}, remSt = {0};
+    for( int i = st.bVldL; i <= st.aVldL; ) {
+        numSt = _getStrAbsStatus(tmpNum, st.bVldP, base);
+        if( 1 != numSt.status )
+            break;
+        if( numSt.cmpRet >= 0 && ++quotVal )
+            _strMinus(tmpNum, st.bVldP, base, tmpRem);
+        remSt = _getStrAbsStatus(tmpRem, st.bVldP, base);
+        if( 1 != remSt.status )
+            break;
+        if( remSt.cmpRet < 0 ) {
+            if( numSt.cmpRet < 0 )
+                sprintf(tmpRem, "%s", tmpNum);
+            *qp++ = quotVal + (16 == base && quotVal > 9 ? 'A' - 10 : '0');
+            quotVal = 0;
+        }
+        np = tmpNum;
+        for( int j = remSt.aVldL; j < remSt.bVldL; ++j )
+            *np++ = '0';
+        sprintf(np, "%s%c", tmpRem, remSt.cmpRet < 0 ? st.aVldP[i++] : '\0');
+    }
+    sprintf(rem, "%s", tmpRem);
+    free(tmpNum);
+    tmpNum = NULL;
+    if( 1 != numSt.status || 1 != remSt.status )
+        return NULL;
+    *qp = '\0';
+    qp = quot;
+    while( '0' == *qp )
+        ++qp;
+    if( qp > quot )
+        sprintf(quot, "%s", qp);
+    return quot;
+}
+static inline char _getChrVal(char c, int base)
+{
+    return (c | 0x20) - (16 == base && 'a' <= (c | 0x20) && (c | 0x20) <= 'f' ? 'a' - 10 : '0');
 }
