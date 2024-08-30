@@ -43,21 +43,13 @@ char* strPlus(char* a, char* b, int base, char* result)
     STR_ABS_COMP_RESULT absRet = _getStrAbsStatus(a, b, base);
     if( 1 != absRet.status )
         return NULL;
-    char* max = 1 == absRet.cmpRet ? absRet.aVldP : absRet.bVldP;
-    char* min = 1 != absRet.cmpRet ? absRet.aVldP : absRet.bVldP;
-    char tmpRet[STRING_NUMBER_MAX_LEN] = {'\0'}, * tmpRetp = tmpRet, * retp = result;
-    if( 1 == absRet.cmpRet && -1 == absRet.aSgn || -1 == absRet.cmpRet && -1 == absRet.bSgn )
-        *retp++ = '-';
-    if( 16 == base )
-        *retp++ = '0', *retp++ = 'x';
-    if( 0 == absRet.cmpRet && absRet.aSgn != absRet.bSgn )
-        *retp++ = '0', *retp++ = '\0';
-    else {
-        absRet.aSgn == absRet.bSgn ? _strPlus(max, min, base, tmpRetp) : _strMinus(max, min, base, tmpRetp);
-        while( '0' == *tmpRetp && tmpRetp[1] != '\0' )
-            ++tmpRetp;
-        sprintf(retp, "%s", tmpRetp);
-    }
+    char* max = 1 == absRet.cmpRet ? absRet.aVldP : absRet.bVldP, tmpRet[STRING_NUMBER_MAX_LEN] = "0";
+    char* min = 1 != absRet.cmpRet ? absRet.aVldP : absRet.bVldP, * tp = tmpRet;
+    char* sign = 1 == absRet.cmpRet && -1 == absRet.aSgn || -1 == absRet.cmpRet && -1 == absRet.bSgn ? "-" : "";
+    if( !(0 == absRet.cmpRet && absRet.aSgn != absRet.bSgn) )
+        absRet.aSgn == absRet.bSgn ? _strPlus(max, min, base, tp) : _strMinus(max, min, base, tp);
+    for( ; '0' == *tp && '\0' != tp[1]; ++tp ) ;
+    sprintf(result, "%s%s%s", sign, 16 == base ? "0x" : "", tp);
     return result;
 }
 /*********************************************
@@ -72,22 +64,14 @@ char* strMinus(char* a, char* b, int base, char* result)
     STR_ABS_COMP_RESULT absRet = _getStrAbsStatus(a, b, base);
     if( 1 != absRet.status )
         return NULL;
-    char* max = 1 == absRet.cmpRet ? absRet.aVldP : absRet.bVldP;
-    char* min = 1 != absRet.cmpRet ? absRet.aVldP : absRet.bVldP;
-    char tmpRet[STRING_NUMBER_MAX_LEN] = {'\0'}, * tmpRetp = tmpRet, * retp = result;
-    if( 1 == absRet.aSgn && 1 == absRet.bSgn && -1 == absRet.cmpRet
-        || -1 == absRet.aSgn && (1 == absRet.bSgn || -1 == absRet.bSgn && 1 == absRet.cmpRet) )
-        *retp++ = '-';
-    if( 16 == base )
-        *retp++ = '0', *retp++ = 'x';
-    if( 0 == absRet.cmpRet && absRet.aSgn == absRet.bSgn )
-        *retp++ = '0', *retp++ = '\0';
-    else {
-        absRet.aSgn != absRet.bSgn ? _strPlus(max, min, base, tmpRetp) : _strMinus(max, min, base, tmpRetp);
-        while( '0' == *tmpRetp && tmpRetp[1] != '\0' )
-            ++tmpRetp;
-        sprintf(retp, "%s", tmpRetp);
-    }
+    char* max = 1 == absRet.cmpRet ? absRet.aVldP : absRet.bVldP, tmpRet[STRING_NUMBER_MAX_LEN] = "0";
+    char* min = 1 != absRet.cmpRet ? absRet.aVldP : absRet.bVldP, * tp = tmpRet;
+    char* sign = 1 == absRet.aSgn && 1 == absRet.bSgn && -1 == absRet.cmpRet
+        || -1 == absRet.aSgn && (1 == absRet.bSgn || -1 == absRet.bSgn && 1 == absRet.cmpRet) ? "-" : "";
+    if( !(0 == absRet.cmpRet && absRet.aSgn == absRet.bSgn) )
+        absRet.aSgn != absRet.bSgn ? _strPlus(max, min, base, tp) : _strMinus(max, min, base, tp);
+    for( ; '0' == *tp && '\0' != tp[1]; ++tp ) ;
+    sprintf(result, "%s%s%s", sign, 16 == base ? "0x" : "", tp);
     return result;
 }
 /*********************************************
@@ -100,26 +84,23 @@ char* strMinus(char* a, char* b, int base, char* result)
 char* strTime(char* a, char* b, int base, char* result)
 {
     STR_ABS_COMP_RESULT absRet = _getStrAbsStatus(a, b, base);
-    if( 1 != absRet.status )
+    if( 1 != absRet.status || absRet.aVldL + (absRet.aSgn != absRet.bSgn ? 1 : 0)
+        + absRet.bVldL + (16 == base ? 2 : 0) >= STRING_NUMBER_MAX_LEN - 1 )
         return NULL;
     a = absRet.aVldP, b = absRet.bVldP;
-    if( 0 == absRet.aVldL || 0 == absRet.bVldL ) {
-        result[0] = '0', result[1] = '\0';
-        return result;
+    char tmpRet[STRING_NUMBER_MAX_LEN] = "0", *tp = tmpRet;
+    if( !(0 == absRet.aVldL || 1 == absRet.aVldL && '0' == *absRet.aVldP
+        ||  0 == absRet.bVldL || 1 == absRet.bVldL && '0' == *absRet.bVldP) ) {
+        int tmpResult[STRING_NUMBER_MAX_LEN] = {0}, i = 0, j = 0;
+        for( char tmpa = _getChrVal(a[i], base); i < absRet.aVldL; tmpa = _getChrVal(a[++i], base), j = 0 )
+            for( char tmpb = _getChrVal(b[j], base); j < absRet.bVldL; tmpb = _getChrVal(b[++j], base) )
+                tmpResult[i + 1 + j] += tmpa * tmpb;
+        for( div_t tmp = div(tmpResult[i = absRet.aVldL - 1 + absRet.bVldL - 1 + 1], base);
+                i >= 0; tmp = div(tmpResult[--i] + tmp.quot, base) )
+            tp[i] = tmp.rem + (16 == base && tmp.rem > 9 ? 'A' - 10 : '0');
     }
-    if( absRet.aVldL + absRet.bVldL + (absRet.aSgn != absRet.bSgn ? 1 : 0) + (16 == base ? 2 : 0) >= STRING_NUMBER_MAX_LEN - 1 )
-        return NULL;
-    int tmpResult[STRING_NUMBER_MAX_LEN] = {0}, i = 0, j = 0;
-    for( char tmpa = _getChrVal(a[i], base); i < absRet.aVldL; tmpa = _getChrVal(a[++i], base), j = 0 )
-        for( char tmpb = _getChrVal(b[j], base); j < absRet.bVldL; tmpb = _getChrVal(b[++j], base) )
-            tmpResult[i + 1 + j] += tmpa * tmpb;
-    div_t tmp = div(tmpResult[i = absRet.aVldL - 1 + absRet.bVldL - 1 + 1], base);
-    char tmpRet[STRING_NUMBER_MAX_LEN] = {'\0'}, * retp = tmpRet;
-    for( ; i >= 0; tmp = div(tmpResult[--i] + tmp.quot, base) )
-        tmpRet[i] = tmp.rem + (16 == base && tmp.rem > 9 ? 'A' - 10 : '0');
-    while( '0' == *retp && '\0' != retp[1] )
-        ++retp;
-    sprintf(result, "%s%s%s", absRet.aSgn != absRet.bSgn ? "-" : "", 16 == base ? "0x" : "", retp);
+    for( ; '0' == *tp && '\0' != tp[1]; ++tp ) ;
+    sprintf(result, "%s%s%s", absRet.aSgn != absRet.bSgn ? "-" : "", 16 == base ? "0x" : "", tp);
     return result;
 }
 /*********************************************
@@ -132,45 +113,29 @@ char* strTime(char* a, char* b, int base, char* result)
 extern char* strDivide(char* a, char* b, int base, char* quot, char* rem)
 {
     STR_ABS_COMP_RESULT absRet = _getStrAbsStatus(a, b, base);
-    if( 1 != absRet.status || NULL == quot || NULL == rem )
+    if( 1 != absRet.status || NULL == quot || NULL == rem
+        || 0 == absRet.bVldL || 1 == absRet.bVldL && '0' == *absRet.bVldP )
         return NULL;
-    a = absRet.aVldP, b = absRet.bVldP;
-    if( 0 == absRet.bVldL || 1 == absRet.bVldL && '0' == *absRet.bVldP )
-        return NULL;
-    else if( 0 == absRet.aVldL || 1 == absRet.aVldL && '0' == *absRet.aVldP ) {
-        quot[0] == '0', quot[1] = '\0';
-        rem[0] = '0', rem[1] = '\0';
-        return quot;
-    }
-    char* qp = quot;
-    if( absRet.aSgn != absRet.bSgn )
-        *qp++ = '-';
-    if( 16 == base ) {
-        *qp++ = '0', *rem++ = '0';
-        *qp++ = 'x', *rem++ = 'x';
-    }
-    if( absRet.cmpRet < 0 ) {
-        sprintf(qp, "%s", absRet.aVldP);
-        sprintf(rem, "%s", absRet.bVldP);
-    }
-    else {
-        if( 0 == absRet.cmpRet ) {
-            *qp++ = '1', *qp++ = '\0';
-            *rem++ = '0', *rem++ = '\0';
+    char tmpQuot[STRING_NUMBER_MAX_LEN] = "0", tmpRem[STRING_NUMBER_MAX_LEN] = "0", *tp = NULL;
+    if( !(0 == absRet.aVldL || 1 == absRet.aVldL && '0' == *absRet.aVldP) )
+        switch( absRet.cmpRet ) {
+            case -1:
+                sprintf(tmpQuot, "%s", absRet.aVldP);
+                sprintf(tmpRem, "%s", absRet.bVldP);
+                break;
+            case 0:
+                sprintf(tmpQuot, "1");
+                sprintf(tmpRem, "0");
+                break;
+            default:
+            case 1:
+                _strDivide(absRet, base, tmpQuot, tmpRem);
+                break;
         }
-        else {
-            char tmpQuot[STRING_NUMBER_MAX_LEN] = {'\0'}, tmpRem[STRING_NUMBER_MAX_LEN] = {'\0'};
-            _strDivide(absRet, base, tmpQuot, tmpRem);
-            char* cp = tmpQuot;
-            while( '0' == *cp && '\0' != cp[1] )
-                ++cp;
-            sprintf(qp, "%s", cp);
-            cp = tmpRem;
-            while( '0' == *cp && '\0' != cp[1] )
-                ++cp;
-            sprintf(rem, "%s", cp);
-        }
-    }
+    for( tp = tmpQuot; '0' == *tp && '\0' != tp[1]; ++tp ) ;
+    sprintf(quot, "%s%s%s", absRet.aSgn != absRet.bSgn ? "-" : "", 16 == base ? "0x" : "", tp);
+    for( tp = tmpRem; '0' == *tp && '\0' != tp[1]; ++tp ) ;
+    sprintf(rem, "%s%s%s", absRet.aSgn != absRet.bSgn ? "-" : "", 16 == base ? "0x" : "", tp);
     return quot;
 }
 /*********************************************
@@ -182,50 +147,28 @@ extern char* strDivide(char* a, char* b, int base, char* quot, char* rem)
 *********************************************/
 char* strGcd(char* a, char* b, int base, char* result)
 {
-    STR_ABS_COMP_RESULT absRet = _getStrAbsStatus(a, b, base);
-    if( 1 != absRet.status || NULL == result )
-        return NULL;
-    if( 0 == absRet.bVldL || 1 == absRet.bVldL && '0' == *absRet.bVldP
+    STR_ABS_COMP_RESULT absRet = _getStrAbsStatus(a, b, base), st = {0};
+    if( 1 != absRet.status || NULL == result
+        || 0 == absRet.bVldL || 1 == absRet.bVldL && '0' == *absRet.bVldP
         || 0 == absRet.aVldL || 1 == absRet.aVldL && '0' == *absRet.aVldP )
         return NULL;
-    char tmpQuot[STRING_NUMBER_MAX_LEN] = {'\0'}, tmpRem[STRING_NUMBER_MAX_LEN] = {'\0'}, tmpa[STRING_NUMBER_MAX_LEN] = {'\0'}, tmpb[STRING_NUMBER_MAX_LEN] = {'\0'}, *tmpr = NULL, *rp = result;
-    sprintf(tmpa, "%s", absRet.aVldP);
-    sprintf(tmpb, "%s", absRet.bVldP);
-    while( 1 ) {
-        STR_ABS_COMP_RESULT st = _getStrAbsStatus(tmpa, tmpb, base);
+    char tmpQuot[STRING_NUMBER_MAX_LEN] = {'\0'}, tmpRem[STRING_NUMBER_MAX_LEN] = {'\0'}, * swap = NULL;
+    char tmpa[STRING_NUMBER_MAX_LEN] = {'\0'}, tmpb[STRING_NUMBER_MAX_LEN] = {'\0'}, * ta = tmpa, * tb = tmpb;
+    for( sprintf(ta, "%s", absRet.aVldP), sprintf(tb, "%s", absRet.bVldP), st = _getStrAbsStatus(ta, tb, base); ;
+            swap = ta, ta = tb, tb = swap, st = _getStrAbsStatus(ta, tb, base) )
         if( 1 != st.status )
             return NULL;
-        if( st.cmpRet >= 1 ) {
+        else if( st.cmpRet >= 1 ) {
             if( NULL == _strDivide(st, base, tmpQuot, tmpRem) )
                 return NULL;
-            char *r = tmpRem;
-            while( '0' == *r )
-                ++r;
-            if( '\0' == *r ) {
-                tmpr = tmpb;
+            for( swap = tmpRem; '0' == *swap; ++swap ) ;
+            if( '\0' == *swap )
                 break;
-            }
-            sprintf(tmpa, "%s", tmpRem);
+            sprintf(ta, "%s", tmpRem);
         }
-        st = _getStrAbsStatus(tmpb, tmpa, base);
-        if( 1 != st.status )
-            return NULL;
-        if( st.cmpRet >= 1 ) {
-            if( NULL == _strDivide(st, base, tmpQuot, tmpRem) )
-               return NULL;
-                char *r = tmpRem;
-                while( '0' == *r )
-                    ++r;
-            if( '\0' == *r ) {
-                tmpr = tmpa;
-                break;
-            }
-            sprintf(tmpb, "%s", tmpRem);
-        }
-    }
-    while( '0' == *tmpr && '\0' != tmpr[1] )
-        ++tmpr;
-    sprintf(rp, "%s%s", 16 == base ? "0x" : "", tmpr);
+    while( '0' == *tb && '\0' != tb[1] )
+        ++tb;
+    sprintf(result, "%s%s", 16 == base ? "0x" : "", tb);
     return result;
 }
 /*********************************************
