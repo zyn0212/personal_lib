@@ -13,18 +13,21 @@
 	Date		: 2021-02-09
 	History		: 2021-02-09
 *********************************************/
-int gcd_z(int a, int b)
+int zyn_gcd(int a, int b)
 {
 	if( 0 == a || 0 == b )
 		return 0;
 	a = a < 0 ? -a : a;
 	b = b < 0 ? -b : b;
-	while( 0 !=  a % b )
+    if( a == b )
+        return b;
+	while( 1 )
 	{
-		a %= b;
-        a ^= b ^= a ^= b;
+        if( 0 == (a %= b) )
+            return b;
+        if( 0 == (b %= a) )
+            return a;
 	}
-	return b;
 }
 /*********************************************
 	function 	: lcm_z
@@ -40,7 +43,7 @@ int lcm_z(int a, int b)
 	int ret = 0, gcd = 0;
 	a = a < 0 ? -a : a;
 	b = b < 0 ? -b : b;
-	gcd = gcd_z(a, b);
+	gcd = zyn_gcd(a, b);
 	ret = a * (b / gcd);
 	if( ret / a == b / gcd )
 		return ret;
