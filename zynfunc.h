@@ -31,7 +31,7 @@ extern NODE_SMP* getNextXorNode(NODE_SMP* prev, NODE_SMP* current);
 
 //math
 extern int zyn_gcd(int a, int b);
-extern int lcm_z(int a, int b);
+extern int zyn_lcm(int a, int b);
 extern long qpow_z(int base, int x);
 extern int isPrime_z(int n);
 
@@ -55,6 +55,7 @@ extern char* strMinus(char* a, char* b, int base, char* result);
 extern char* strTime(char* a, char* b, int base, char* result);
 extern char* strDivide(char* a, char* b, int base, char* quot, char* rem);
 extern char* strGcd(char* a, char* b, int base, char* result);
+extern char* strLcm(char* a, char* b, int base, char* result);
 extern char* zyn_kmp(const char* s, const int slen, const char* p, const int plen);
 // interest function
 /*

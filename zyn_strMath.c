@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#define GET_CHAR(v, b) ((16 == b && v > 9 ? 'A' - 10 : '0') + v)
 typedef struct {
     char cmpRet;
     char aSgn;
@@ -172,6 +173,27 @@ char* strGcd(char* a, char* b, int base, char* result)
     return result;
 }
 /*********************************************
+	function 	: strLcm
+	Description : 字符串数字最小公倍数
+	Author		: zhaoyining
+	Date		: 2024-08-31
+	History		: 
+*********************************************/
+char* strLcm(char* a, char* b, int base, char* result)
+{
+    STR_ABS_COMP_RESULT absRet = _getStrAbsStatus(a, b, base), st = {0};
+    if( 1 != absRet.status || NULL == result
+        || 0 == absRet.bVldL || 1 == absRet.bVldL && '0' == *absRet.bVldP
+        || 0 == absRet.aVldL || 1 == absRet.aVldL && '0' == *absRet.aVldP )
+        return NULL;
+    char tmpGcd[STRING_NUMBER_MAX_LEN] = {'\0'}, tmpMid[STRING_NUMBER_MAX_LEN] = {'\0'}, ign[190] = {'\0'};
+    if( NULL == strGcd(a, b, base, tmpGcd) || '0' == *tmpGcd && '\0' == tmpGcd[1] )
+        return NULL;
+    if( NULL == strDivide(a, tmpGcd, base, tmpMid, ign) || NULL == strTime(b, tmpMid, base, result) )
+        return NULL;
+    return '0' == *ign && '\0' == ign[1] ? result : NULL;
+}
+/*********************************************
 	function 	: zyn_kmp 
 	Description : 在s字符串中匹配p字符串,未找到返回NULL，否则返回第一个匹配到的字符串位置
 	Author		: zhaoyining
@@ -248,13 +270,8 @@ static char* _trimPrefix(char* a, int base, char* sign)
     *sign = '\0' == *ap || '-' == *ap || '+' == *ap ?  '-' == *ap++ ? -1 : 1 : 1;
     while( ' ' == *ap || '\t' == *ap )
         ++ap;
-    if( 16 == base && '0' == *ap && 'x' == (ap[1] | 0x20) )
-        ap += 2;
-    while( '0' == *ap || ' ' == *ap || '\t' == *ap )
-        ++ap;
-    if( '\0' == *ap && ap > a )
-        --ap;
-    return ap;
+    for( ap += 16 == base && '0' == *ap && 'x' == (ap[1] | 0x20) ? 2 : 0; '0' == *ap || ' ' == *ap || '\t' == *ap; ++ap) ;
+    return '\0' == *ap && ap > a ? ap - 1 : ap;
 }
 static int _strChrCheck(char c, int base)
 {
@@ -285,10 +302,11 @@ static char* _strPlus(char* a, char* b, int base, char* result)
     if( resultLen >= STRING_NUMBER_MAX_LEN - 1 ) // resultLen is location of tmp output, must before '\0'
         return NULL;
     for( --aLen, --bLen; resultLen >= 0; --aLen, --bLen, --resultLen ) {
-        char tmpa = aLen >= 0 ? _getChrVal(a[aLen], base) : 0, tmpb = bLen >= 0 ? _getChrVal(b[bLen], base) : 0, tmpSum = tmpa + tmpb + upbit;
+        char tmpa = aLen >= 0 ? _getChrVal(a[aLen], base) : 0;
+        char tmpb = bLen >= 0 ? _getChrVal(b[bLen], base) : 0, tmpSum = tmpa + tmpb + upbit;
         upbit = tmpSum >= base ? 1 : 0;
         tmpSum -= base * upbit;
-        tmpResult[resultLen] = (16 == base && tmpSum > 9 ? 'A' - 10 : '0') + tmpSum;
+        tmpResult[resultLen] = GET_CHAR(tmpSum, base);
     }
     sprintf(result, "%s", tmpResult + ('0' == tmpResult[0] ? 1 : 0));
     return result;
@@ -304,7 +322,7 @@ static char* _strMinus(char* a, char* b, int base, char* result)
         tmpa -= upbit;
         upbit = tmpa < tmpb ? 1 : 0;
         char tmpSum = tmpa + upbit * base - tmpb;
-        result[aLen] = (16 == base && tmpSum > 9 ? 'A' - 10 : '0') + tmpSum;
+        result[aLen] = GET_CHAR(tmpSum, base);
     }
     return result;
 }
@@ -320,15 +338,12 @@ static char* _strDivide( STR_ABS_COMP_RESULT st, int base, char* quot, char* rem
         numSt = _getStrAbsStatus(tmpNum, st.bVldP, base);
         if( 1 != numSt.status )
             break;
-        if( numSt.cmpRet >= 0 && ++quotVal )
-            _strMinus(tmpNum, st.bVldP, base, tmpRem);
-        else
-            sprintf(tmpRem, "%s", tmpNum);
+        numSt.cmpRet >= 0 && ++quotVal ?  _strMinus(tmpNum, st.bVldP, base, tmpRem) : sprintf(tmpRem, "%s", tmpNum);
         remSt = _getStrAbsStatus(tmpRem, st.bVldP, base);
         if( 1 != remSt.status )
             break;
         if( remSt.cmpRet < 0 ) {
-            *qp++ = quotVal + (16 == base && quotVal > 9 ? 'A' - 10 : '0');
+            *qp++ =  GET_CHAR(quotVal, base);
             quotVal = 0;
             sprintf(tmpNum, "%s%c", tmpRem + ('0' == *tmpRem ? 1 : 0), st.aVldP[i++]);
         }
@@ -336,11 +351,11 @@ static char* _strDivide( STR_ABS_COMP_RESULT st, int base, char* quot, char* rem
             sprintf(tmpNum, "%s", tmpRem);
     }
     sprintf(rem, "%s", tmpRem);
+    *qp = '\0';
     free(tmpNum);
     tmpNum = NULL;
     if( 1 != numSt.status || 1 != remSt.status )
         return NULL;
-    *qp = '\0';
     return quot;
 }
 static inline char _getChrVal(char c, int base)

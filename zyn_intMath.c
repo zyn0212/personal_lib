@@ -7,7 +7,7 @@
 *********************************************/
 #include "zynfunc.h"
 /*********************************************
-	function 	: gcd_z
+	function 	: zyn_gcd
 	Description : 返回 a 和 b 的最大公约数，返回值非负，忽略参数中的负号，当a或者b是零时，返回0
 	Author		: zhaoyining
 	Date		: 2021-02-09
@@ -30,13 +30,13 @@ int zyn_gcd(int a, int b)
 	}
 }
 /*********************************************
-	function 	: lcm_z
+	function 	: zyn_lcm
 	Description : 返回a 和 b 的最小公倍数， 返回值非负，忽略参数中的负号，当a或者b是零时，返回0
 	Author		: zhaoyining
 	Date		: 2021-02-09
 	History		: 2021-02-09
 *********************************************/
-int lcm_z(int a, int b)
+int zyn_lcm(int a, int b)
 {
 	if( 0 == a || 0 == b )
 		return 0;
