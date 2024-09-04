@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#define GET_CHAR(v, b) ((16 == b && v > 9 ? 'A' - 10 : '0') + v)
 typedef struct {
     char cmpRet;
     char aSgn;
@@ -28,6 +27,7 @@ static STR_ABS_COMP_RESULT _getStrAbsStatus(char* a, char* b, int base);
 static char* _trimPrefix(char* a, int base, char* sign);
 static int _strChrCheck(char c, int base);
 static inline char _getChrVal(char c, int base);
+static char _getChrStr(char v, int base);
 static char* _strPlus(char* a, char* b, int base, char* result);
 static char* _strMinus(char* a, char* b, int base, char* result);
 static char* _strDivide( STR_ABS_COMP_RESULT st, int base, char* quot, char* rem);
@@ -273,28 +273,6 @@ static char* _trimPrefix(char* a, int base, char* sign)
     for( ap += 16 == base && '0' == *ap && 'x' == (ap[1] | 0x20) ? 2 : 0; '0' == *ap || ' ' == *ap || '\t' == *ap; ++ap) ;
     return '\0' == *ap && ap > a ? ap - 1 : ap;
 }
-static int _strChrCheck(char c, int base)
-{
-    int ret = -1;
-    switch( base ) {
-        case 16: //fall through
-            if( 'a' <= (c | 0x20) && (c | 0x20) <= 'f' )
-                ret = 0;
-        case 10: //fall through
-            if( '8' <= c && c <= '9' )
-                ret = 0;
-        case 8: //fall through
-            if( '2' <= c && c <= '7' )
-                ret = 0;
-        case 2:
-            if( '0' <= c && c <= '1' )
-                ret = 0;
-            break;
-        default:
-            break;
-    }
-    return ret;
-}
 static char* _strPlus(char* a, char* b, int base, char* result)
 {
     char tmpResult[STRING_NUMBER_MAX_LEN] = {'\0'}, upbit = 0;
@@ -306,7 +284,7 @@ static char* _strPlus(char* a, char* b, int base, char* result)
         char tmpb = bLen >= 0 ? _getChrVal(b[bLen], base) : 0, tmpSum = tmpa + tmpb + upbit;
         upbit = tmpSum >= base ? 1 : 0;
         tmpSum -= base * upbit;
-        tmpResult[resultLen] = GET_CHAR(tmpSum, base);
+        tmpResult[resultLen] = _getChrStr(tmpSum, base);
     }
     sprintf(result, "%s", tmpResult + ('0' == tmpResult[0] ? 1 : 0));
     return result;
@@ -322,7 +300,7 @@ static char* _strMinus(char* a, char* b, int base, char* result)
         tmpa -= upbit;
         upbit = tmpa < tmpb ? 1 : 0;
         char tmpSum = tmpa + upbit * base - tmpb;
-        result[aLen] = GET_CHAR(tmpSum, base);
+        result[aLen] = _getChrStr(tmpSum, base);
     }
     return result;
 }
@@ -343,7 +321,7 @@ static char* _strDivide( STR_ABS_COMP_RESULT st, int base, char* quot, char* rem
         if( 1 != remSt.status )
             break;
         if( remSt.cmpRet < 0 ) {
-            *qp++ =  GET_CHAR(quotVal, base);
+            *qp++ =  _getChrStr(quotVal, base);
             quotVal = 0;
             sprintf(tmpNum, "%s%c", tmpRem + ('0' == *tmpRem ? 1 : 0), st.aVldP[i++]);
         }
@@ -358,7 +336,23 @@ static char* _strDivide( STR_ABS_COMP_RESULT st, int base, char* quot, char* rem
         return NULL;
     return quot;
 }
+const char s_chr[38] = "0123456789abcdefghijklmnopqrstuvwxyz{";
 static inline char _getChrVal(char c, int base)
 {
-    return (c | 0x20) - (16 == base && 'a' <= (c | 0x20) && (c | 0x20) <= 'f' ? 'a' - 10 : '0');
+    if( base < 2 || base > 36 || base > 10 && c >= s_chr[base] )
+        return 0;
+    return (c | 0x20) - ( base > 10 && (c | 0x20) >= 'a' ? 'a' - 10 : '0');
+}
+static int _strChrCheck(char c, int base)
+{
+    if( base < 2 || base > 36 )
+        return -1;
+    for( int i = 0; i < base; ++i )
+        if( (c | 0x20) == s_chr[i] )
+            return 0;
+    return -1;
+}
+static char _getChrStr(char v, int base)
+{
+    return base < 2 || base > 36 || v >= base ? 0 : (s_chr[v] ^ (v > 9 ? 0x20 : 0));
 }
