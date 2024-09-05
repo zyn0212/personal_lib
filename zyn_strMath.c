@@ -199,6 +199,48 @@ char* strLcm(char* a, char* b, int base, char* result)
     return '0' == *ign && '\0' == ign[1] ? result : NULL;
 }
 /*********************************************
+	function 	: strPow 
+	Description : 返回a中的字符串数字的幂运算结果，进制base有效范围 2 - 36, x有效范围 >= 0
+	Author		: zhaoyining
+	Date		: 2024-09-05
+	History		: 
+*********************************************/
+char* strPow(char* a, int base, int x, char* result)
+{
+    if( NULL == a || base < 2 || base > MAXBASE || x < 0 || NULL == result )
+        return NULL;
+    if( '0' == *a && '\0' == a[1] )
+        sprintf(result, "0");
+    else if( 0 == x || '1' == *a && '\0' == a[1] )
+        sprintf(result, "1");
+    else {
+        char tmpa[STRING_NUMBER_MAX_LEN] = "", tmpb[STRING_NUMBER_MAX_LEN] = "", * ap = tmpa, * bp = tmpb, *swap = NULL;
+        char tmpRet[STRING_NUMBER_MAX_LEN] = "1", tmpMid[STRING_NUMBER_MAX_LEN] = "", * rp = tmpRet, * mp = tmpMid;
+        sprintf(ap, "%s", a);
+        for( ; 0 != x; x >>= 1 ) {
+            STR_ABS_COMP_RESULT st = {0};
+            if( 1 == (x & 1) ) {
+                st = _getStrAbsStatus(rp, ap, base);
+                if( 1 != st.status || st.aVldL + st.bVldL >= STRING_NUMBER_MAX_LEN )
+                    return NULL;
+                if( NULL == strTime(rp, ap, base, mp) )
+                    return NULL;
+                swap = mp, mp = rp, rp = swap;
+                if( 0 == x >> 1 )
+                    break;
+            }
+            st = _getStrAbsStatus(ap, ap, base);
+            if( 1 != st.status || st.aVldL + st.bVldL >= STRING_NUMBER_MAX_LEN )
+                return NULL;
+            if( NULL == strTime(ap, ap, base, bp) )
+                return NULL;
+            swap = ap, ap = bp, bp = swap;
+        }
+        sprintf(result, "%s", rp);
+    }
+    return result;
+}
+/*********************************************
 	function 	: strBaseCvt
 	Description : 将a中的字符串数字由srcBase进制转换为dstBase进制，结果保存在result数组中，异常返回NULL
                   srcBase和dstBase有效范围 2 - 36
@@ -274,7 +316,7 @@ static int _getNext(const char* s, const int len, int* next)
 static STR_ABS_COMP_RESULT _getStrAbsStatus(char* a, char* b, int base)
 {
     STR_ABS_COMP_RESULT ret = {0, 0, 0, -1};
-    if( NULL == a || NULL == b || base < 2 )
+    if( NULL == a || NULL == b || base < 2 || base > MAXBASE )
         return ret;
     a = ret.aVldP = _trimPrefix(a, base, &ret.aSgn);
     b = ret.bVldP = _trimPrefix(b, base, &ret.bSgn);
