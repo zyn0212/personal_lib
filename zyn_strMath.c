@@ -8,11 +8,13 @@
 	History		: 2024-08-24 revise string plus and minus
 	History		: 2024-08-26 revise string time
 	History		: 2024-08-29 revise string divide
+	History		: 2024-09-03 add strBaseCvt function
 *********************************************/
 #include "zynfunc.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#define MAXBASE 36
 typedef struct {
     char cmpRet;
     char aSgn;
@@ -28,6 +30,9 @@ static char* _trimPrefix(char* a, int base, char* sign);
 static int _strChrCheck(char c, int base);
 static inline char _getChrVal(char c, int base);
 static char _getChrStr(char v, int base);
+static char* _generalBaseCvt(const char* a, int srcBase, int dstBase, char* result);
+static char* _sliceBaseCvt(const char* a, int srcBase, int dstBase, int ratio, char* result);
+static int _getBaseRelation(int srcBase, int dstBase);
 static char* _strPlus(char* a, char* b, int base, char* result);
 static char* _strMinus(char* a, char* b, int base, char* result);
 static char* _strDivide( STR_ABS_COMP_RESULT st, int base, char* quot, char* rem);
@@ -98,7 +103,7 @@ char* strTime(char* a, char* b, int base, char* result)
                 tmpResult[i + 1 + j] += tmpa * tmpb;
         for( div_t tmp = div(tmpResult[i = absRet.aVldL - 1 + absRet.bVldL - 1 + 1], base);
                 i >= 0; tmp = div(tmpResult[--i] + tmp.quot, base) )
-            tp[i] = tmp.rem + (16 == base && tmp.rem > 9 ? 'A' - 10 : '0');
+            tp[i] = _getChrStr(tmp.rem, base);
     }
     for( ; '0' == *tp && '\0' != tp[1]; ++tp ) ;
     sprintf(result, "%s%s%s", absRet.aSgn != absRet.bSgn ? "-" : "", 16 == base ? "0x" : "", tp);
@@ -192,6 +197,36 @@ char* strLcm(char* a, char* b, int base, char* result)
     if( NULL == strDivide(a, tmpGcd, base, tmpMid, ign) || NULL == strTime(b, tmpMid, base, result) )
         return NULL;
     return '0' == *ign && '\0' == ign[1] ? result : NULL;
+}
+/*********************************************
+	function 	: strBaseCvt
+	Description : 将a中的字符串数字由srcBase进制转换为dstBase进制，结果保存在result数组中，异常返回NULL
+                  srcBase和dstBase有效范围 2 - 36
+	Author		: zhaoyining
+	Date		: 2024-09-03
+	History		: 
+*********************************************/
+extern char* strBaseCvt(const char* a, int srcBase, int dstBase, char* result)
+{
+    if( NULL == a || srcBase < 2 || srcBase > 36 || dstBase < 2 || dstBase > 36 || NULL == result )
+        return NULL;
+    while( ' ' == *a || '-' == *a || '+' == *a || '\t' == *a )
+        ++a;
+    int bs = _getBaseRelation(srcBase, dstBase);
+    char* ret = result;
+    switch( bs ) {
+        case 0:
+            sprintf(result, "%s", a);
+            break;
+        case 2: case 3: case 4: case 5:
+        case -2: case -3: case -4: case -5:
+             ret = _sliceBaseCvt(a, srcBase, dstBase, bs, result);
+            break;
+        default:
+            ret = _generalBaseCvt(a, srcBase, dstBase, result);
+            break;
+    }
+    return ret;
 }
 /*********************************************
 	function 	: zyn_kmp 
@@ -336,23 +371,101 @@ static char* _strDivide( STR_ABS_COMP_RESULT st, int base, char* quot, char* rem
         return NULL;
     return quot;
 }
-const char s_chr[38] = "0123456789abcdefghijklmnopqrstuvwxyz{";
+static int _getBaseRelation(int srcBase, int dstBase)
+{
+    int ret = 0;
+    if( srcBase == dstBase )
+        ret = 0;
+    else if( srcBase > dstBase )
+        if( srcBase == dstBase * dstBase )
+            ret = 2;
+        else if( srcBase == dstBase * dstBase * dstBase )
+            ret = 3;
+        else if( srcBase == dstBase * dstBase * dstBase * dstBase )
+            ret = 4;
+        else if( srcBase == dstBase * dstBase * dstBase * dstBase * dstBase )
+            ret = 5;
+        else
+            ret = 1;
+    else
+        if( srcBase * srcBase == dstBase )
+            ret = -2;
+        else if( srcBase * srcBase * srcBase == dstBase )
+            ret = -3;
+        else if( srcBase * srcBase * srcBase * srcBase == dstBase )
+            ret = -4;
+        else if( srcBase * srcBase * srcBase * srcBase * srcBase == dstBase )
+            ret = -5;
+        else
+            ret = -1;
+    return ret;
+}
+static char* _generalBaseCvt(const char* a, int srcBase, int dstBase, char* result)
+{
+    char tmpNum[STRING_NUMBER_MAX_LEN] = {0}, tmpQuot[STRING_NUMBER_MAX_LEN] = {0}, tmpRem[STRING_NUMBER_MAX_LEN] = {0};
+    char* tqp = tmpQuot, * trp = tmpRem, * rp = result;
+    for( int numSlice = 0; ; a = tmpNum, numSlice = 0, tqp = tmpQuot ) {
+        div_t d = {0};
+        while( 0 == _strChrCheck(*a, srcBase) ) {
+            numSlice = numSlice * srcBase + _getChrVal(*a++, srcBase);
+            d = div(numSlice, dstBase);
+            *tqp++ = _getChrStr(d.quot, srcBase);
+            numSlice = d.rem;
+        }
+        *tqp = '\0';
+        *trp++ = _getChrStr(numSlice, dstBase);
+        sprintf(tmpNum, "%s", tmpQuot);
+        STR_ABS_COMP_RESULT st = _getStrAbsStatus(tmpNum, "0", srcBase);
+        if( 1 != st.status )
+            return NULL;
+        else if( 0 == st.cmpRet )
+            break;
+    }
+    for( --trp; trp >= tmpRem; *rp++ = *trp-- ) ;
+    *rp = '\0';
+}
+static char* _sliceBaseCvt(const char* a, int srcBase, int dstBase, int ratio, char* result)
+{
+    char* rp = result;
+    if( ratio > 0 )
+        for( ; 0 == _strChrCheck(*a, srcBase); rp += ratio ) {
+            div_t d = {_getChrVal(*a++, srcBase), 0};
+            for( int loc = ratio - 1; loc >= 0; --loc ) {
+                d = div(d.quot, dstBase);
+                rp[loc] = _getChrStr(d.rem, dstBase);
+            }
+        }
+    else {
+        ratio = -ratio;
+        int len = 0, v = 0;
+        for( char* ap = a; '\0' != *ap++; ++len ) ;
+        for( int i = 0, width = len % ratio == 0 ? ratio : len % ratio; i < (len + ratio - 1) / ratio; ++i, v = 0, width = ratio ) {
+            for( int j = 0; j < width; ++j )
+                v = v * srcBase + _getChrVal(*a++, srcBase);
+            *rp++ = _getChrStr(v, dstBase);
+        }
+    }
+    *rp = '\0';
+    return result;
+}
+static const char s_chr[38] = "0123456789abcdefghijklmnopqrstuvwxyz{";
 static inline char _getChrVal(char c, int base)
 {
-    if( base < 2 || base > 36 || base > 10 && c >= s_chr[base] )
+    if( base < 2 || base > MAXBASE || base < 11 && (c < '0' || '9' < c)
+        || base > 10 && !('0' <= c && c <= '9' || 'a' <= (c | 0x20) && (c | 0x20) < s_chr[base]) )
         return 0;
     return (c | 0x20) - ( base > 10 && (c | 0x20) >= 'a' ? 'a' - 10 : '0');
 }
 static int _strChrCheck(char c, int base)
 {
-    if( base < 2 || base > 36 )
+    if( base < 2 || base > MAXBASE )
         return -1;
     for( int i = 0; i < base; ++i )
-        if( (c | 0x20) == s_chr[i] )
+        if( (c | (i > 9 ? 0x20 : 0)) == s_chr[i] )
             return 0;
     return -1;
 }
 static char _getChrStr(char v, int base)
 {
-    return base < 2 || base > 36 || v >= base ? 0 : (s_chr[v] ^ (v > 9 ? 0x20 : 0));
+    return base < 2 || base > MAXBASE || v >= base ? 0 : (s_chr[v] ^ (v > 9 ? 0x20 : 0));
 }

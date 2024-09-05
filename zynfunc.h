@@ -56,6 +56,7 @@ extern char* strTime(char* a, char* b, int base, char* result);
 extern char* strDivide(char* a, char* b, int base, char* quot, char* rem);
 extern char* strGcd(char* a, char* b, int base, char* result);
 extern char* strLcm(char* a, char* b, int base, char* result);
+extern char* strBaseCvt(const char* a, int srcBase, int dstBase, char* result);
 extern char* zyn_kmp(const char* s, const int slen, const char* p, const int plen);
 // interest function
 /*
