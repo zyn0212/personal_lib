@@ -6,7 +6,7 @@
     History     : rename file from zynfunc.c
     History     : clean source code
 ******************************************/
-#include "./zynfunc.h"
+#include "zyn_func.h"
 #include <stdio.h>
 #include <math.h>
 #include <string.h>

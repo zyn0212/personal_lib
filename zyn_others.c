@@ -6,7 +6,7 @@
 	History		: 2022-07-05 creat file with fillTrangl function
 	              2024-07-04 add zyn_cvtDecToX function
 *********************************************/
-#include "zynfunc.h"
+#include "zyn_func.h"
 #include <stdio.h>
 #define MAX_CONVERT_LENGTH 500
 /*********************************************

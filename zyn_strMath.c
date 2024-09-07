@@ -10,7 +10,7 @@
 	History		: 2024-08-29 revise string divide
 	History		: 2024-09-03 add strBaseCvt function
 *********************************************/
-#include "zynfunc.h"
+#include "zyn_func.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

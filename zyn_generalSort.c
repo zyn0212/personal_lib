@@ -5,7 +5,7 @@
 	Date		: 2021-01-25
 	History		: 2021-01-25 creat file with bubble sort
 *********************************************/
-#include "zynfunc.h"
+#include "zyn_func.h"
 #include <stdlib.h>
 #include <memory.h>
 #define ARGUMENT_CHECK(a, b, c, d) do {\
@@ -20,7 +20,8 @@ typedef struct node {
 	struct node *left;
 	struct node *right;
 } CC;
-static int swap(void * const a, void * const b, int size);
+static int _swap(void * const a, void * const b, int size);
+static void _fixheap(CC *parent, int headIsSmall);
 /*********************************************
 	function 	: BubbleSort_z
 	Description : bubble sort, return -1 when unsort array have error;
@@ -39,12 +40,10 @@ int BubbleSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
 		for( j = n - 1, ischange = 0; j >= i; --j )
 			if( (headIsSmall && compare(unsort + j * size, unsort + (j - 1) * size) < 0)
 			 || (!headIsSmall && compare(unsort + j * size, unsort + (j - 1) * size) > 0) )
-			{
-				if( 0 != swap(unsort + j * size, unsort + (j - 1) * size, size) )
+				if( 0 != _swap(unsort + j * size, unsort + (j - 1) * size, size) )
 					return -3;
 				else
 					ischange = ++movetimes > 0;
-			}
 	return movetimes;
 }
 /*********************************************
@@ -63,8 +62,7 @@ int SelectSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
 	ARGUMENT_CHECK(unsort, n, size, compare);
 	int i = 0, j = 0, movetimes = 0, minloc = 0, maxloc = 0;
 	void *emin = NULL, *emax = NULL;
-	for( i = 0; i < n - i; ++i )
-	{
+	for( i = 0; i < n - i; ++i ) {
 		minloc = headIsSmall ? i : n - 1 - i;
 		maxloc = headIsSmall ? n - 1 - i : i;
         for( j = i, emin = unsort + minloc * size, emax = unsort + maxloc * size; j < n - i; ++j )
@@ -73,10 +71,10 @@ int SelectSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
             else if( compare(unsort + j * size, emax) > 0 )
                 emax = unsort + j * size;
         if( emin != unsort + minloc * size && ++movetimes > 0 )
-            if( 0 != swap(emin, unsort + minloc * size, size) )
+            if( 0 != _swap(emin, unsort + minloc * size, size) )
                 return -3;
         if( (emax = unsort + minloc * size == emax ? emin : emax) != unsort+ maxloc * size && ++movetimes > 0 )
-            if( 0 != swap(emax, unsort + maxloc * size, size) )
+            if( 0 != _swap(emax, unsort + maxloc * size, size) )
                 return -3;
     }
 	return movetimes;
@@ -98,18 +96,16 @@ int InsertSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
 	if( NULL == element_tmp )
 		return -3;
 	int i = 0, j = 0, movetimes = 0;
-	for( i = 1; i < n; ++i )
-	{
+	for( i = 1; i < n; ++i ) {
 		for( j = 0; j < i; ++j )
 			if( (headIsSmall && compare(unsort + i * size, unsort + j * size) < 0)
 			 || (!headIsSmall && compare(unsort + i * size, unsort + j * size) > 0) )
 				break;
-		if( i != j )
-		{
-				memcpy(element_tmp, unsort + i * size, size);
-				memmove(unsort + (j + 1) * size, unsort + j * size, (i - j) * size);
-				memcpy(unsort + j * size, element_tmp, size);
-				++movetimes;
+		if( i != j ) {
+            memcpy(element_tmp, unsort + i * size, size);
+            memmove(unsort + (j + 1) * size, unsort + j * size, (i - j) * size);
+            memcpy(unsort + j * size, element_tmp, size);
+            ++movetimes;
 		}
 	}
 	free(element_tmp);
@@ -136,14 +132,12 @@ int ShellSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 	while( gap < n / 3 )
 		gap = gap * 3 + 1;
 	for( ; gap > 0; gap = (gap - 1) / 3 )
-		for( i = gap; i < n; ++i )
-		{
+		for( i = gap; i < n; ++i ) {
 			for( j = i, dest = i; j > gap - 1; j -= gap )
 				if( (headIsSmall && compare(unsort + i * size, unsort + (j - gap) * size) < 0)
 				 || (!headIsSmall && compare(unsort + i * size, unsort + (j - gap) * size) > 0) )
 					dest = j - gap;
-			if( dest != i )
-			{
+			if( dest != i ) {
 				memcpy(element_tmp, unsort + i * size, size);
 				for( k = i; k > dest; k -= gap )
 					memcpy(unsort + k * size, unsort + (k - gap) * size, size);
@@ -169,16 +163,16 @@ int MergeSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 {
 	ARGUMENT_CHECK(unsort, n, size, compare);
 	int ret = 0;
-	switch( n )
-	{
+	switch( n ) {
 		case 2:
 			if( (headIsSmall && compare(unsort + size, unsort) < 0)
 			 || (!headIsSmall && compare(unsort + size, unsort) > 0) )
-				 swap(unsort, unsort + size, size);
+				 _swap(unsort, unsort + size, size);
 			ret = 0;
 			break;
 		default:
-			ret = MergeSort_z(unsort, n >> 1, size, compare, headIsSmall) + MergeSort_z(unsort + (n >> 1) * size, n - (n >> 1), size, compare, headIsSmall);
+			ret = MergeSort_z(unsort, n >> 1, size, compare, headIsSmall)
+                  + MergeSort_z(unsort + (n >> 1) * size, n - (n >> 1), size, compare, headIsSmall);
 			break;
 	}
 	void *element_tmp = calloc(n, size);
@@ -187,29 +181,24 @@ int MergeSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 	void *element_left = unsort, *element_right = unsort + (n >> 1) * size, *element_head = element_tmp;
 	int i = 0;
 	for( ; i < n; ++i )
-		if( element_left >= unsort + (n >> 1) * size )
-		{
+		if( element_left >= unsort + (n >> 1) * size ) {
 			memcpy(element_tmp, element_right, size);
 			element_tmp += size;
 			element_right += size;
 		}
-		else if( element_right >= unsort + (n - 1) * size )
-		{
+		else if( element_right >= unsort + (n - 1) * size ) {
 			memcpy(element_tmp, element_left, size);
 			element_tmp += size;
 			element_left += size;
 		}
-		else
-		{
+		else {
 			if( (headIsSmall && compare(element_left, element_right) < 0)
-			 || (!headIsSmall && compare(element_left, element_right) > 0) )
-			{
+			 || (!headIsSmall && compare(element_left, element_right) > 0) ) {
 				memcpy(element_tmp, element_left, size);
 				element_tmp += size;
 				element_left += size;
 			}
-			else
-			{
+			else {
 				memcpy(element_tmp, element_right, size);
 				element_tmp += size;
 				element_right += size;
@@ -233,8 +222,7 @@ int QuickSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 	ARGUMENT_CHECK(unsort, n, size, compare);
 	void *element_gap = unsort, *element_left = unsort + size, *element_right = unsort + (n - 1) * size;
 	int find_left = 0, find_right = 0, left_num = 0;
-	while( element_right > element_left )
-	{
+	while( element_right > element_left ) {
 		for( ; element_left < element_right; element_right -= size )
 			if( (headIsSmall && compare(element_right, element_gap) < 0)
 			|| (!headIsSmall && compare(element_right, element_gap) > 0) )
@@ -244,9 +232,9 @@ int QuickSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 			|| (!headIsSmall && compare(element_right, element_gap) > 0) )
 				break;
 		if( element_left < element_right )
-			swap(element_left, element_right, size);
+			_swap(element_left, element_right, size);
 	}
-	swap(element_right, element_gap, size);
+	_swap(element_right, element_gap, size);
 	QuickSort_z(unsort, left_num, size, compare, headIsSmall);
 	QuickSort_z(unsort + left_num * size, n - left_num, size, compare, headIsSmall);
 	return 0;
@@ -277,14 +265,12 @@ int CountSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 	if( NULL == unsort_tmp )
 		return -3;
 	CC *counthead = (CC *)calloc(length, sizeof(CC));
-	if( NULL == counthead )
-	{
+	if( NULL == counthead ) {
 		free(unsort_tmp);
 		unsort_tmp = NULL;
 		return -3;
 	}
-	for( i = 0; i < n; ++i )
-	{
+	for( i = 0; i < n; ++i ) {
 		curnum = compare(unsort + i * size, element_small);
 		unsort_tmp[i].value = curnum;
 		unsort_tmp[i].location = i;
@@ -294,8 +280,7 @@ int CountSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 		curnode->right = unsort_tmp + i;
 	}
 	void *sorted = calloc(n, size);
-	if( NULL == sorted )
-	{
+	if( NULL == sorted ) {
 		free(unsort_tmp);
 		unsort_tmp = NULL;
 		free(counthead);
@@ -341,36 +326,30 @@ int RadixSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 		else if( compare(unsort + i * size, element_large) > 0 )
 			element_large = unsort + i * size;
 	int length = compare(element_large, element_small);
-	for( i = 0; i < n; ++i )
-	{
+	for( i = 0; i < n; ++i ) {
 		unsort_tmp[i].value = compare(unsort + i * size, element_small);
 		unsort_tmp[i].location = i;
 	}
-	while( 0 != length )
-	{
+	while( 0 != length ) {
 		++radix;
 		length >>= 4;
 	}
 	CC *radixhead = calloc(16, sizeof(CC)), *curnode = NULL;
-	if( NULL == radixhead )
-	{
+	if( NULL == radixhead ) {
 		free(unsort_tmp);
 		unsort_tmp = NULL;
 		return -4;
 	}
 	CC *radix_tmp = calloc(n, sizeof(CC));
-	if( NULL == radix_tmp )
-	{
+	if( NULL == radix_tmp ) {
 		free(unsort_tmp);
 		unsort_tmp = NULL;
 		free(radixhead);
 		radixhead = NULL;
 		return -5;
 	}
-	for( i = 0; i < radix; ++i )
-	{
-		for( j = 0; j < n; ++j )
-		{
+	for( i = 0; i < radix; ++i ) {
+		for( j = 0; j < n; ++j ) {
 			curnum = unsort_tmp[j].value >> (i << 2) & 0xF;
 			++radixhead[curnum].value;
 			curnode = radixhead + curnum;
@@ -386,8 +365,7 @@ int RadixSort_z(void *unsort, int n, int size, int (*compare)(void const *a, voi
 		memcpy(unsort_tmp, radix_tmp, n * sizeof(CC));
 	}
 	void *sorted = calloc(n, size);
-	if( NULL == sorted )
-	{
+	if( NULL == sorted ) {
 		free(unsort_tmp);
 		free(radixhead);
 		unsort_tmp = NULL;
@@ -436,8 +414,7 @@ int BucketSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
 		else if( compare(unsort + i * size, element_large) > 0 )
 			element_large = unsort + i * size;
 	length = compare(element_large, element_small);
-	for( i =0; i < n; ++i )
-	{
+	for( i =0; i < n; ++i ) {
 		unsort_tmp[i].value = compare(unsort + i * size, element_small);
 		unsort_tmp[i].location = i;
 		unsort_tmp[i].right = NULL;
@@ -446,27 +423,23 @@ int BucketSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
 	if( 0 == bucketnum )
 		++bucketnum;
 	CC *buckethead = calloc(bucketnum, sizeof(CC));
-	if( NULL == buckethead )
-	{
+	if( NULL == buckethead ) {
 		free(unsort_tmp);
 		unsort_tmp = NULL;
 		return -4;
 	}
 	void * sorted = calloc(n, size);
-	if( NULL == sorted )
-	{
+	if( NULL == sorted ) {
 		free(unsort_tmp);
 		unsort_tmp = NULL;
 		free(buckethead);
 		buckethead = NULL;
 		return -5;
 	}
-	for( i = 0; i < n; ++i )
-	{
+	for( i = 0; i < n; ++i ) {
 		curnum = unsort_tmp[i].value >> 4;
 		curbucket = buckethead + curnum;
-		while( NULL != curbucket->right )
-		{	
+		while( NULL != curbucket->right ) {
 			if( (headIsSmall && unsort_tmp[i].value <= curbucket->right->value)
 			|| (!headIsSmall && unsort_tmp[i].value >= curbucket->right->value) )
 				break;
@@ -476,8 +449,7 @@ int BucketSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
 		curbucket->right = unsort_tmp + i;
 		curbucket->right->right = curbucketnext_tmp;
 	}
-	for( i = 0, curnum = 0; i < bucketnum; ++i )
-	{
+	for( i = 0, curnum = 0; i < bucketnum; ++i ) {
 		j = headIsSmall ? i : bucketnum - 1 - i;
 		for( curbucket = buckethead[j].right; NULL != curbucket; ++curnum, curbucket = curbucket->right )
 			memcpy(sorted + curnum * size, unsort + curbucket->location * size, size);
@@ -491,7 +463,6 @@ int BucketSort_z(void *unsort, int n, int size, int (*compare)(void const *a, vo
 	sorted = NULL;
 	return 0;
 }
-static void fixheap(CC *parent, int headIsSmall);
 /*********************************************
 	function 	: HeapSort_z
 	Description : Heap sort, return -1 when unsort array have error;
@@ -522,8 +493,7 @@ int HeapSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void
 	unsort_tmp[n].left = unsort_tmp;
 	unsort_tmp[0].location = 0;
 	unsort_tmp[0].value = compare(unsort, element_small);
-	for( i = 1; i < n; ++i )
-	{
+	for( i = 1; i < n; ++i ) {
 		unsort_tmp[i].value = compare(unsort + i * size, element_small);
 		unsort_tmp[i].location = i;
 		if( 1 == (i & 1) )
@@ -533,25 +503,21 @@ int HeapSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void
 			unsort_tmp[(i - 1) >> 1].right = unsort_tmp + i;
 	}
 	for( i = n - 1; i > 0; --i )
-	{
-		fixheap(unsort_tmp + ((i - 1) >> 1), headIsSmall);
-	}
-	for( i = 0; i < n - 1; ++i )
-	{
+		_fixheap(unsort_tmp + ((i - 1) >> 1), headIsSmall);
+	for( i = 0; i < n - 1; ++i ) {
 		left = unsort_tmp->left;
 		right = unsort_tmp->right;
-		swap(unsort_tmp, unsort_tmp + n - 1 - i, sizeof(CC));
+		_swap(unsort_tmp, unsort_tmp + n - 1 - i, sizeof(CC));
 		unsort_tmp->left = left;
 		unsort_tmp->right = right;
 		if( (n - 1 - i & 1) == 1 )
 			unsort_tmp[(n - 1 - i - 1) >> 1].left = NULL;
 		else
 			unsort_tmp[(n - 1 - i - 1) >> 1].right = NULL;
-		fixheap(unsort_tmp, headIsSmall);
+		_fixheap(unsort_tmp, headIsSmall);
 	}
 	void *sorted = calloc(n, size);
-	if( NULL == sorted )
-	{
+	if( NULL == sorted ) {
 		free(unsort_tmp);
 		unsort_tmp = NULL;
 		return -4;
@@ -565,7 +531,7 @@ int HeapSort_z(void *unsort, int n, int size, int (*compare)(void const *a, void
 	sorted = NULL;
 	return 0;
 }
-int swap(void * const a, void * const b, int size)
+int _swap(void * const a, void * const b, int size)
 {
     if( a == b )
         return 0;
@@ -579,33 +545,31 @@ int swap(void * const a, void * const b, int size)
 	tmp = NULL;
 	return 0;
 }
-void fixheap(CC *parent, int headIsSmall)
+void _fixheap(CC *parent, int headIsSmall)
 {
 	CC *parentleft = NULL, *parentright = NULL, *childleft = NULL, *childright = NULL;
-	if( NULL != parent->right && ((headIsSmall && parent->right->value < parent->value) || (!headIsSmall && parent->right->value > parent->value)) )
-	{
+	if( NULL != parent->right && ((headIsSmall && parent->right->value < parent->value) || (!headIsSmall && parent->right->value > parent->value)) ) {
 		parentleft = parent->left;
 		parentright = parent->right;
 		childleft = parent->right->left;
 		childright = parent->right->right;
-		swap(parent, parent->right, sizeof(CC));
+		_swap(parent, parent->right, sizeof(CC));
 		parent->left = parentleft;
 		parent->right = parentright;
 		parent->right->left = childleft;
 		parent->right->right = childright;
-		fixheap(parent->right, headIsSmall);
+		_fixheap(parent->right, headIsSmall);
 	}
-	if( NULL != parent->left && ((headIsSmall && parent->left->value < parent->value) || (!headIsSmall && parent->left->value > parent->value)) )
-	{
+	if( NULL != parent->left && ((headIsSmall && parent->left->value < parent->value) || (!headIsSmall && parent->left->value > parent->value)) ) {
 		parentleft = parent->left;
 		parentright = parent->right;
 		childleft = parent->left->left;
 		childright = parent->left->right;
-		swap(parent, parent->left, sizeof(CC));
+		_swap(parent, parent->left, sizeof(CC));
 		parent->left = parentleft;
 		parent->right = parentright;
 		parent->left->left = childleft;
 		parent->left->right = childright;
-		fixheap(parent->left, headIsSmall);
+		_fixheap(parent->left, headIsSmall);
 	}
 }

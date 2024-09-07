@@ -5,7 +5,7 @@
 	Date		: 2021-02-09
 	History		: 2021-02-09 creat file with gcd and lcm function
 *********************************************/
-#include "zynfunc.h"
+#include "zyn_func.h"
 /*********************************************
 	function 	: zyn_gcd
 	Description : 返回 a 和 b 的最大公约数，返回值非负，忽略参数中的负号，当a或者b是零时，返回0
