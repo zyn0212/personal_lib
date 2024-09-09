@@ -68,8 +68,6 @@ extern char* zyn_kmp(const char* s, const int slen, const char* p, const int ple
    3       2
 */
 extern int fillTrangl(int startnum, int tranglWide, int* array, int arrayWide, int corner);
-extern int convertHex2Oct(char* hex, char* result);
-extern int zyn_cvtDecToX(unsigned long long s, unsigned int base, char* result, int maxLen);
 #ifdef __cplusplus
  }
 #endif

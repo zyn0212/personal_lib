@@ -32,6 +32,9 @@ static inline char _getChrVal(char c, int base);
 static char _getChrStr(char v, int base);
 static char* _generalBaseCvt(const char* a, int srcBase, int dstBase, char* result);
 static char* _sliceBaseCvt(const char* a, int srcBase, int dstBase, int ratio, char* result);
+static char* _hexOctBaseCvt(const char* a, int srcBase, int dstBase, char* result);
+static char* _spilitByteTo3(char* lftBit, char* lftVal, char* result);
+static char* _merge3ToByte(char* lftBit, char* lftVal, char* result);
 static int _getBaseRelation(int srcBase, int dstBase);
 static char* _strPlus(char* a, char* b, int base, char* result);
 static char* _strMinus(char* a, char* b, int base, char* result);
@@ -264,6 +267,9 @@ extern char* strBaseCvt(const char* a, int srcBase, int dstBase, char* result)
         case -2: case -3: case -4: case -5:
              ret = _sliceBaseCvt(a, srcBase, dstBase, bs, result);
             break;
+        case -6: case 6:
+             ret = _hexOctBaseCvt(a, srcBase, dstBase, result);
+            break;
         default:
             ret = _generalBaseCvt(a, srcBase, dstBase, result);
             break;
@@ -427,6 +433,8 @@ static int _getBaseRelation(int srcBase, int dstBase)
             ret = 4;
         else if( srcBase == dstBase * dstBase * dstBase * dstBase * dstBase )
             ret = 5;
+        else if( 16 == srcBase && 8 == dstBase )
+            ret = 6;
         else
             ret = 1;
     else
@@ -438,9 +446,53 @@ static int _getBaseRelation(int srcBase, int dstBase)
             ret = -4;
         else if( srcBase * srcBase * srcBase * srcBase * srcBase == dstBase )
             ret = -5;
+        else if( 8 == srcBase && 16 == dstBase )
+            ret = -6;
         else
             ret = -1;
     return ret;
+}
+static char* _hexOctBaseCvt(const char* a, int srcBase, int dstBase, char* result)
+{
+    char tmpRet0[STRING_NUMBER_MAX_LEN] = {0}, tmpRet1[STRING_NUMBER_MAX_LEN] = {0}, * r0p = tmpRet0, * r1p = tmpRet1;
+    char tmpRet2[STRING_NUMBER_MAX_LEN] = {0}, tmpRet3[STRING_NUMBER_MAX_LEN] = {0}, * r2p = tmpRet2, * r3p = tmpRet3;
+    char* rp = NULL;
+    int r0LeftVal = 0, r1LeftVal = 0, r2LeftVal = 0, r3LeftVal = 0, r0LeftBit = 0, r3LeftBit = 3;
+    int r1LeftBit = srcBase > dstBase ? 2 : 1, r2LeftBit = srcBase > dstBase ? 1 : 2;
+        if( srcBase > dstBase )
+            while( 0 == _strChrCheck(*a, 16) ) {
+                int curVal = _getChrVal(*a++, srcBase) & 0xF;
+                r1LeftVal = r1LeftVal << 4 & 0x70 | curVal;
+                r2LeftVal = r2LeftVal << 4 & 0x70 | curVal;
+                r0LeftVal = r0LeftVal << 4 & 0x70 | curVal;
+                r1LeftBit += 4, r2LeftBit += 4, r0LeftBit += 4;
+                r1p = _spilitByteTo3(&r1LeftBit, &r1LeftVal, r1p);
+                r2p = _spilitByteTo3(&r2LeftBit, &r2LeftVal, r2p);
+                r0p = _spilitByteTo3(&r0LeftBit, &r0LeftVal, r0p);
+            }
+        else
+            while( 0 == _strChrCheck(*a, 8) ) {
+                int curVal = _getChrVal(*a++, srcBase) & 0x7;
+                r1LeftVal = r1LeftVal << 3 & 0x38 | curVal;
+                r2LeftVal = r2LeftVal << 3 & 0x38 | curVal;
+                r3LeftVal = r3LeftVal << 3 & 0x38 | curVal;
+                r0LeftVal = r0LeftVal << 3 & 0x38 | curVal;
+                r1LeftBit += 3, r2LeftBit += 3, r3LeftBit += 3, r0LeftBit += 3;
+                r1p = _merge3ToByte(&r1LeftBit, &r1LeftVal, r1p);
+                r2p = _merge3ToByte(&r2LeftBit, &r2LeftVal, r2p);
+                r3p = _merge3ToByte(&r3LeftBit, &r3LeftVal, r3p);
+                r0p = _merge3ToByte(&r0LeftBit, &r0LeftVal, r0p);
+            }
+        if( 0 == r3LeftBit )
+            rp = tmpRet3;
+        else if( 0 == r2LeftBit )
+            rp = tmpRet2;
+        else if( 0 == r1LeftBit )
+            rp = tmpRet1;
+        else
+            rp = tmpRet0;
+    sprintf(result, "%s", rp);
+    return result;
 }
 static char* _generalBaseCvt(const char* a, int srcBase, int dstBase, char* result)
 {
@@ -489,6 +541,54 @@ static char* _sliceBaseCvt(const char* a, int srcBase, int dstBase, int ratio, c
     }
     *rp = '\0';
     return result;
+}
+static char* _spilitByteTo3(char* lftBit, char* lftVal, char* result)
+{
+    char* ret = result + 1;
+    switch( *lftBit ) {
+        case 4:
+            *result = _getChrStr(*lftVal >> 1 & 7, 8);
+            *lftVal &= 1;
+            break;
+        case 5:
+            *result = _getChrStr(*lftVal >> 2 & 7, 8);
+            *lftVal &= 3;
+            break;
+        default: case 6:
+            *result = _getChrStr(*lftVal >> 3 & 7, 8);
+            result[1] = _getChrStr(*lftVal & 7, 8);
+            *lftVal = 0;
+            *lftBit -= 3;
+            ret += 1;
+            break;
+    }
+    *lftBit -= 3;
+    return ret;
+}
+static char* _merge3ToByte(char* lftBit, char* lftVal, char* result)
+{
+    char* ret = result;
+    switch( *lftBit ) {
+        case 4:
+            *ret++ = _getChrStr(*lftVal & 0xF, 16);
+            *lftBit = 0;
+            *lftVal = 0;
+            break;
+        case 5:
+            *ret++ = _getChrStr(*lftVal >> 1 & 0xF, 16);
+            *lftBit = 1;
+            *lftVal &= 1;
+            break;
+        case 6:
+            *ret++ = _getChrStr(*lftVal >> 2 & 0xF, 16);
+            *lftBit = 2;
+            *lftVal &= 3;
+            break;
+        default: case 3:
+            *lftVal &= 7;
+            break;
+    }
+    return ret;
 }
 static const char s_chr[38] = "0123456789abcdefghijklmnopqrstuvwxyz{";
 static inline char _getChrVal(char c, int base)
