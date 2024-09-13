@@ -7,10 +7,15 @@
 	              2024-07-04 add zyn_cvtDecToX function
     Histroy     : delete  convertHex2Oct function
     Histroy     : delete  zyn_cvtDecToX function
+    Histroy     : 2024-09-11 add magicSquare
 *********************************************/
 #include "zyn_func.h"
 #include <stdio.h>
 #define MAX_CONVERT_LENGTH 500
+static int _fillOddSq(int* arr, int arrWide, int sqWide, int start);
+static int _fillEvenSq(int* arr, int arrWide, int sqWide);
+static int _fillEvensSq(int* arr, int arrWide, int sqWide);
+static void _swap(int* a, int* b);
 /*********************************************
 	function 	: fillTrangl
 	Description : 按照顺时针和递增的顺序填充一个正方形螺旋矩阵，返回最后的填充数字
@@ -57,4 +62,81 @@ int fillTrangl(int startnum, int tranglWide, int* array, int arrayWide, int corn
         }
     }
     return --startnum;
+}
+/*********************************************
+	function 	: magicSquare
+	Description : 在给定的数组中填入幻方数字,返回幻方内最大数字+1
+    Parameter   : arr是二维数组的一维指针，arrWide是二维数组的第一维大小，sqWide是幻方宽度，arrWide >= sqWide, sqWide > 2
+    Author		: zhaoyining
+	Date		: 2024-09-11
+	History		: 2024-09-11
+*********************************************/
+int magicSquare(int* arr, int arrWide, int sqWide)
+{
+    if( NULL == arr || arrWide < sqWide || sqWide < 3 )
+        return -1;
+    int ret = 0;
+    switch( sqWide & 3 ) {
+        case 1: default:
+            ret = _fillOddSq(arr, arrWide, sqWide, 1);
+            break;
+        case 2:
+            ret = _fillEvenSq(arr, arrWide, sqWide);
+            break;
+        case 0:
+            ret = _fillEvensSq(arr, arrWide, sqWide);
+            break;
+    }
+    return ret;
+}
+static int _fillOddSq(int* arr, int arrWide, int sqWide, int start)
+{
+    for( int loc = sqWide - 1 >> 1, i = 0, next = 0; i < sqWide * sqWide; ++i ) {
+        arr[loc] = start++;
+        next =  loc + (0 == (loc % arrWide + 1) % sqWide ? 1 - sqWide : 1);
+        next = next - arrWide >= 0 ? next - arrWide : (next - arrWide + sqWide * arrWide) % (sqWide * arrWide);
+        loc = 0 != arr[next] ? (loc + arrWide + sqWide * arrWide) % (sqWide * arrWide) : next;
+    }
+    return start;
+}
+static int _fillEvensSq(int* arr, int arrWide, int sqWide)
+{
+    for( int i = 0, loc = 0; i < sqWide * sqWide; loc += 0 == ++i % sqWide ? 1 + arrWide - sqWide : 1 )
+        arr[loc] = i + 1;
+    int swapVal = arrWide * (sqWide - 1) + sqWide - 1, childWide = sqWide >> 1;
+    if( 4 == sqWide ) {
+        _swap(arr, arr + swapVal);
+        _swap(arr + arrWide + 1, arr + swapVal - arrWide - 1);
+        _swap(arr + arrWide * 2 + 1, arr + swapVal - arrWide * 2 - 1);
+        _swap(arr + arrWide * 3, arr + swapVal - arrWide * 3);
+    }
+    else
+        for( int i = 0, locM = 0, locS = childWide - 1; i < sqWide; ++i ) {
+            _swap(arr + locM, arr + swapVal - locM);
+            _swap(arr + locS, arr + swapVal - locS);
+            locM += arrWide + (childWide - 1 != i ? i < childWide ? 1 : -1 : 0);
+            locS += arrWide + (childWide - 1 != i ? i < childWide ? -1 : 1 : 0);
+        }
+    return sqWide * sqWide + 1;
+}
+static int _fillEvenSq(int* arr, int arrWide, int sqWide)
+{
+    int childWide = sqWide >> 1, k = sqWide >> 2, start = 1;
+    start = _fillOddSq(arr, arrWide, childWide, start);
+    start = _fillOddSq(arr + childWide * arrWide + childWide, arrWide, childWide, start);
+    start = _fillOddSq(arr + childWide, arrWide, childWide, start);
+    start = _fillOddSq(arr + childWide * arrWide, arrWide, childWide, start);
+    for( int i = 0; i < childWide; ++i ) {
+        for( int j = 0; j < k; ++j )
+            _swap(arr + i * arrWide + j + (i == childWide >> 1 ? childWide >> 1 : 0),
+                    arr + i * arrWide + childWide * arrWide + j + (i == childWide >> 1 ? childWide >> 1 : 0));
+        for( int j = 0; j < k - 1; ++j )
+            _swap(arr + i * arrWide + childWide + (childWide >> 1) - j,
+                    arr + i * arrWide + childWide * arrWide + childWide + (childWide >> 1) - j);
+    }
+    return start;
+}
+static inline void _swap(int* a, int* b)
+{
+    *a ^= *b ^= *a ^= *b;
 }
