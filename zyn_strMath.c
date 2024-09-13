@@ -1,14 +1,14 @@
 /*********************************************
-	File name	: zyn_strMath.c
-	Description : personal string algorithm: huge number calculate function, match function
-	Author		: zhaoyining
-	Date		: 2022-07-05
-	History		: 2022-07-05 creat file
-	History		: 2024-08-24 add string KMP alog 
-	History		: 2024-08-24 revise string plus and minus
-	History		: 2024-08-26 revise string time
-	History		: 2024-08-29 revise string divide
-	History		: 2024-09-03 add strBaseCvt function
+    File name   : zyn_strMath.c
+    Description : personal string algorithm: huge number calculate function, match function
+    Author      : zhaoyining
+    Date        : 2022-07-05
+    History     : 2022-07-05 creat file
+    History     : 2024-08-24 add string KMP alog 
+    History     : 2024-08-24 revise string plus and minus
+    History     : 2024-08-26 revise string time
+    History     : 2024-08-29 revise string divide
+    History     : 2024-09-03 add strBaseCvt function
 *********************************************/
 #include "zyn_func.h"
 #include <stdio.h>
@@ -41,11 +41,11 @@ static char* _strMinus(char* a, char* b, int base, char* result);
 static char* _strDivide( STR_ABS_COMP_RESULT st, int base, char* quot, char* rem);
 static int _getNext(const char* s, const int len, int* next);
 /*********************************************
-	function 	: strPlus 
-	Description : 字符串数字加法
-	Author		: zhaoyining
-	Date		: 2024-08-24
-	History		: 
+    function    : strPlus 
+    Description : 字符串数字加法
+    Author      : zhaoyining
+    Date        : 2024-08-24
+    History     : 
 *********************************************/
 char* strPlus(char* a, char* b, int base, char* result)
 {
@@ -62,11 +62,11 @@ char* strPlus(char* a, char* b, int base, char* result)
     return result;
 }
 /*********************************************
-	function 	: strMinus
-	Description : 字符串数字减法
-	Author		: zhaoyining
-	Date		: 2024-08-24
-	History		: 
+    function    : strMinus
+    Description : 字符串数字减法
+    Author      : zhaoyining
+    Date        : 2024-08-24
+    History     : 
 *********************************************/
 char* strMinus(char* a, char* b, int base, char* result)
 {
@@ -84,11 +84,11 @@ char* strMinus(char* a, char* b, int base, char* result)
     return result;
 }
 /*********************************************
-	function 	: strTime
-	Description : 字符串数字乘法
-	Author		: zhaoyining
-	Date		: 2024-08-26
-	History		: 
+    function    : strTime
+    Description : 字符串数字乘法
+    Author      : zhaoyining
+    Date        : 2024-08-26
+    History     : 
 *********************************************/
 char* strTime(char* a, char* b, int base, char* result)
 {
@@ -113,11 +113,11 @@ char* strTime(char* a, char* b, int base, char* result)
     return result;
 }
 /*********************************************
-	function 	: strDivide
-	Description : 字符串数字除法
-	Author		: zhaoyining
-	Date		: 2024-08-29
-	History		: 
+    function    : strDivide
+    Description : 字符串数字除法
+    Author      : zhaoyining
+    Date        : 2024-08-29
+    History     : 
 *********************************************/
 extern char* strDivide(char* a, char* b, int base, char* quot, char* rem)
 {
@@ -148,11 +148,11 @@ extern char* strDivide(char* a, char* b, int base, char* quot, char* rem)
     return quot;
 }
 /*********************************************
-	function 	: strGcd
-	Description : 字符串数字最大公约数
-	Author		: zhaoyining
-	Date		: 2024-08-29
-	History		: 
+    function    : strGcd
+    Description : 字符串数字最大公约数
+    Author      : zhaoyining
+    Date        : 2024-08-29
+    History     : 
 *********************************************/
 char* strGcd(char* a, char* b, int base, char* result)
 {
@@ -181,11 +181,11 @@ char* strGcd(char* a, char* b, int base, char* result)
     return result;
 }
 /*********************************************
-	function 	: strLcm
-	Description : 字符串数字最小公倍数
-	Author		: zhaoyining
-	Date		: 2024-08-31
-	History		: 
+    function    : strLcm
+    Description : 字符串数字最小公倍数
+    Author      : zhaoyining
+    Date        : 2024-08-31
+    History     : 
 *********************************************/
 char* strLcm(char* a, char* b, int base, char* result)
 {
@@ -202,11 +202,11 @@ char* strLcm(char* a, char* b, int base, char* result)
     return '0' == *ign && '\0' == ign[1] ? result : NULL;
 }
 /*********************************************
-	function 	: strPow 
-	Description : 返回a中的字符串数字的幂运算结果，进制base有效范围 2 - 36, x有效范围 >= 0
-	Author		: zhaoyining
-	Date		: 2024-09-05
-	History		: 
+    function    : strPow 
+    Description : 返回a中的字符串数字的幂运算结果，进制base有效范围 2 - 36, x有效范围 >= 0
+    Author      : zhaoyining
+    Date        : 2024-09-05
+    History     : 
 *********************************************/
 char* strPow(char* a, int base, int x, char* result)
 {
@@ -244,12 +244,12 @@ char* strPow(char* a, int base, int x, char* result)
     return result;
 }
 /*********************************************
-	function 	: strBaseCvt
-	Description : 将a中的字符串数字由srcBase进制转换为dstBase进制，结果保存在result数组中，异常返回NULL
+    function    : strBaseCvt
+    Description : 将a中的字符串数字由srcBase进制转换为dstBase进制，结果保存在result数组中，异常返回NULL
                   srcBase和dstBase有效范围 2 - 36
-	Author		: zhaoyining
-	Date		: 2024-09-03
-	History		: 
+    Author      : zhaoyining
+    Date        : 2024-09-03
+    History     : 
 *********************************************/
 extern char* strBaseCvt(const char* a, int srcBase, int dstBase, char* result)
 {
@@ -277,11 +277,11 @@ extern char* strBaseCvt(const char* a, int srcBase, int dstBase, char* result)
     return ret;
 }
 /*********************************************
-	function 	: zyn_kmp 
-	Description : 在s字符串中匹配p字符串,未找到返回NULL，否则返回第一个匹配到的字符串位置
-	Author		: zhaoyining
-	Date		: 2024-08-24
-	History		: 
+    function    : zyn_kmp 
+    Description : 在s字符串中匹配p字符串,未找到返回NULL，否则返回第一个匹配到的字符串位置
+    Author      : zhaoyining
+    Date        : 2024-08-24
+    History     : 
 *********************************************/
 char* zyn_kmp(const char* s, const int slen, const char* p, const int plen)
 {
@@ -300,11 +300,11 @@ char* zyn_kmp(const char* s, const int slen, const char* p, const int plen)
     return pl == j ? s + i - j : NULL;
 }
 /*********************************************
-	function 	: 静态函数区
-	Description : 本文件函数使用的功能函数
-	Author		: zhaoyining
-	Date		: 2024-08-24
-	History		: 
+    function    : 静态函数区
+    Description : 本文件函数使用的功能函数
+    Author      : zhaoyining
+    Date        : 2024-08-24
+    History     : 
 *********************************************/
 static int _getNext(const char* s, const int len, int* next)
 {

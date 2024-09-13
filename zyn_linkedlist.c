@@ -1,12 +1,12 @@
 /******************************************  
-        File name   : zyn_linkedlist.c
-        Description : personal linkedlist function library
-        Author      : zhaoyining
-        Date        : 2021-02-11
-        History     : rename file from zynfunc.c
-        History     : clean source code
-        History     : 2024-09-13 delete addNextXorNode
-        History     : 2024-09-13 delete addXorNodeBetweenF_S
+    File name   : zyn_linkedlist.c
+    Description : personal linkedlist function library
+    Author      : zhaoyining
+    Date        : 2021-02-11
+    History     : rename file from zynfunc.c
+    History     : clean source code
+    History     : 2024-09-13 delete addNextXorNode
+    History     : 2024-09-13 delete addXorNodeBetweenF_S
     ******************************************/
 #include "zyn_func.h"
 #include <stdio.h>
@@ -15,14 +15,14 @@
 #include <stdlib.h>
 #define XOR_2PTR(a, b) ((XOR_NODE*)((unsigned long)(a)^(unsigned long)(b)))
 #define XOR_3PTR(a, b, c) ((XOR_NODE*)((unsigned long)(a)^(unsigned long)(b)^(unsigned long)(c)))
-    /*********************************************
-        function    : initXorLinkedList
-        Description : 初始化异或链表的头指针，如果参数异常或者内存申请失败，返回NULL，初始化正常返回头指针
-        Parameter   : first 链表的第一个节点，second 链表的第二个节点
-        Author      : zhaoyining
-        Date        : 2022-07-10
-        History     : 2022-07-10
-    *********************************************/
+/*********************************************
+    function    : initXorLinkedList
+    Description : 初始化异或链表的头指针，如果参数异常或者内存申请失败，返回NULL，初始化正常返回头指针
+    Parameter   : first 链表的第一个节点，second 链表的第二个节点
+    Author      : zhaoyining
+    Date        : 2022-07-10
+    History     : 2022-07-10
+*********************************************/
 XOR_HEADER* initXorLinkedList(XOR_NODE* first, XOR_NODE* second)
 {
     if( NULL == first || NULL == second )

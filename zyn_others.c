@@ -1,10 +1,9 @@
 /*********************************************
-	File name	: zyn_interest.c
-	Description : personal insterest function
-	Author		: zhaoyining
-	Date		: 2022-07-05
-	History		: 2022-07-05 creat file with fillTrangl function
-	              2024-07-04 add zyn_cvtDecToX function
+    File name   : zyn_interest.c
+    Description : personal insterest function
+    Author      : zhaoyining
+    Date        : 2022-07-05
+    History     : 2022-07-05 creat file with fillTrangl function, add zyn_cvtDecToX function
     Histroy     : delete  convertHex2Oct function
     Histroy     : delete  zyn_cvtDecToX function
     Histroy     : 2024-09-11 add magicSquare
@@ -17,13 +16,12 @@ static int _fillEvenSq(int* arr, int arrWide, int sqWide);
 static int _fillEvensSq(int* arr, int arrWide, int sqWide);
 static void _swap(int* a, int* b);
 /*********************************************
-	function 	: fillTrangl
-	Description : 按照顺时针和递增的顺序填充一个正方形螺旋矩阵，返回最后的填充数字
-    Parameter   : startnum 矩阵的起始数字，trangeWide 矩阵宽度, array 数组地址(如果是二维数组需要强制转换),arrayWide 数组的行宽度
-                  corner起始填充角: 1 右上， 2 右下， 3 左下， 其他 左上
-    Author		: zhaoyining
-	Date		: 2022-07-05
-	History		: 2022-07-05
+    function    : fillTrangl
+    Description : 按照顺时针和递增的顺序填充一个正方形螺旋矩阵，返回最后的填充数字
+    Parameter   : startnum 矩阵的起始数字，trangeWide 矩阵宽度, array 数组地址(如果是二维数组需要强制转换),arrayWide 数组的行宽度, corner起始填充角: 1 右上， 2 右下， 3 左下， 其他 左上
+    Author      : zhaoyining
+    Date        : 2022-07-05
+    History     : 2022-07-05
 *********************************************/
 int fillTrangl(int startnum, int tranglWide, int* array, int arrayWide, int corner)
 {
@@ -64,12 +62,12 @@ int fillTrangl(int startnum, int tranglWide, int* array, int arrayWide, int corn
     return --startnum;
 }
 /*********************************************
-	function 	: magicSquare
-	Description : 在给定的数组中填入幻方数字,返回幻方内最大数字+1
+    function    : magicSquare
+    Description : 在给定的数组中填入幻方数字,返回幻方内最大数字+1
     Parameter   : arr是二维数组的一维指针，arrWide是二维数组的第一维大小，sqWide是幻方宽度，arrWide >= sqWide, sqWide > 2
-    Author		: zhaoyining
-	Date		: 2024-09-11
-	History		: 2024-09-11
+    Author      : zhaoyining
+    Date        : 2024-09-11
+    History     : 2024-09-11
 *********************************************/
 int magicSquare(int* arr, int arrWide, int sqWide)
 {

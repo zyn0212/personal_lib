@@ -12,13 +12,13 @@
 #define isOverFlow_add_z(x, y) ((((x)^(y))|(((~((x)^(y))&1<<(sizeof(long)<<3)-1)^(x))+(y))^(y))>=0) 
 typedef struct _node_smp {
     void* data;
-	int size;
-	struct _node_smp* side;
+    int size;
+    struct _node_smp* side;
 } XOR_NODE;
 typedef struct {
-	int nodeNum;
-	XOR_NODE* first;
-	XOR_NODE* second;
+    int nodeNum;
+    XOR_NODE* first;
+    XOR_NODE* second;
 } XOR_HEADER;
 
 // XOR linked list function
