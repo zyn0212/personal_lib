@@ -15,6 +15,7 @@ static int _fillOddSq(int* arr, int arrWide, int sqWide, int start);
 static int _fillEvenSq(int* arr, int arrWide, int sqWide);
 static int _fillEvensSq(int* arr, int arrWide, int sqWide);
 static void _swap(int* a, int* b);
+static float _getOpResult(float a, float b, char op);
 /*********************************************
     function    : fillTrangl
     Description : 按照顺时针和递增的顺序填充一个正方形螺旋矩阵，返回最后的填充数字
@@ -87,6 +88,53 @@ int magicSquare(int* arr, int arrWide, int sqWide)
     }
     return ret;
 }
+/*********************************************
+    function    : math24
+    Description : 根据给定的input数组中的四个整数，扫描可通过加减乘除及括号算出24的组合，成功返回1，否则返回0，成功的结果保存在result中
+    Parameter   :
+    Author      : zhaoyining
+    Date        : 2024-09-27
+    History     : 2024-09-27
+*********************************************/
+int math24(int* in, char* result)
+{
+    if( NULL == in || NULL == result )
+        return 0;
+    const char op[4] = {'+', '-', '*', '/'};
+    int s = *in ^ in[1] ^ in[2] ^ in[3], dd = 0;
+    float a = 0.0, b = 0.0, c = 0.0, d = 0.0;
+    for( int i = 0; i < 4; ++i ) {
+        a = (float)in[i];
+        for( int j = 0; j < 4; ++j ) {
+            if( j == i )
+                continue;
+            b = (float)in[j];
+            for( int k = 0; k < 4; ++k ) {
+                if( k == i || k == j )
+                    continue;
+                c = (float)in[k];
+                dd = s ^ in[i] ^ in[j] ^ in[k];
+                d = (float)dd;
+                for( char o1 = 0, op1 = op[o1]; o1 < 4; op1 = op[++o1] )
+                    for( char o2 = 0, op2 = op[o2]; o2 < 4; op2 = op[++o2] )
+                        for( char o3 = 0, op3 = op[o3]; o3 < 4; op3 = op[++o3] )
+                            if( 24.0 == _getOpResult(_getOpResult(_getOpResult(a, b, op1), c, op2), d, op3) ) {
+                                sprintf(result, "((%d %c %d) %c %d) %c %d", in[i], op1, in[j], op2, in[k], op3, dd);
+                                    return 1;
+                            }
+                            else if( 24.0 == _getOpResult(_getOpResult(a, b, op1), _getOpResult(c, d, op3), op2) ) {
+                                sprintf(result, "(%d %c %d) %c (%d %c %d)", in[i], op1, in[j], op2, in[k], op3, dd);
+                                    return 1;
+                            }
+                            else if( 24.0 == _getOpResult(_getOpResult(a, _getOpResult(b, c, op2), op1), d, op3) ) {
+                                sprintf(result, "(%d %c (%d %c %d)) %c %d", in[i], op1, in[j], op2, in[k], op3, dd);
+                                    return 1;
+                            }
+            }
+        }
+    }
+    return 0;
+}
 static int _fillOddSq(int* arr, int arrWide, int sqWide, int start)
 {
     for( int loc = sqWide - 1 >> 1, i = 0, next = 0; i < sqWide * sqWide; ++i ) {
@@ -137,4 +185,25 @@ static int _fillEvenSq(int* arr, int arrWide, int sqWide)
 static inline void _swap(int* a, int* b)
 {
     *a ^= *b ^= *a ^= *b;
+}
+static float _getOpResult(float a, float b, char op)
+{
+    float ret = 0.0;
+    switch( op ) {
+        case '+':
+            ret = a + b;
+            break;
+        case '-':
+            ret = a - b;
+            break;
+        case '*':
+            ret = a * b;
+            break;
+        case '/':
+            ret = a / b;
+            break;
+        default:
+            break;
+    }
+    return ret;
 }

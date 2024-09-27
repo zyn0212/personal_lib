@@ -66,6 +66,7 @@ extern char* zyn_kmp(const char* s, const int slen, const char* p, const int ple
 */
 extern int fillTrangl(int startnum, int tranglWide, int* array, int arrayWide, int corner);
 extern int magicSquare(int* arr, int arrWide, int sqWide);
+extern int math24(int* input, char* result);
 #ifdef __cplusplus
  }
 #endif
